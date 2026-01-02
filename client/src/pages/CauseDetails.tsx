@@ -1,18 +1,47 @@
 import { useCause } from "@/hooks/use-causes";
-import { useApplyForCause } from "@/hooks/use-tasks";
+import { useApplyForCause, useUploadProof, useUpdateTaskStatus } from "@/hooks/use-tasks";
 import { useAuth } from "@/hooks/use-auth";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams, Link } from "wouter";
-import { Loader2, MapPin, Tag, AlertCircle, CheckCircle } from "lucide-react";
+import { Loader2, MapPin, Tag, AlertCircle, CheckCircle, Heart } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertDonationSchema } from "@shared/schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CauseDetails() {
   const { id } = useParams<{ id: string }>();
   const { data: cause, isLoading } = useCause(Number(id));
   const applyMutation = useApplyForCause();
   const { user } = useAuth();
+  const { toast } = useToast();
+
+  const donationForm = useForm({
+    resolver: zodResolver(insertDonationSchema.omit({ volunteerId: true, causeId: true })),
+    defaultValues: { amount: "10" },
+  });
+
+  const donateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/donations", { 
+        ...data, 
+        causeId: Number(id),
+        amount: data.amount.toString()
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Donation successful! Thank you for your support." });
+      donationForm.reset();
+    },
+  });
 
   if (isLoading) {
     return (
@@ -132,6 +161,44 @@ export default function CauseDetails() {
               </div>
             </CardContent>
           </Card>
+
+          {user?.role === 'volunteer' && (
+            <Card className="shadow-lg border-primary/10 mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Heart className="h-5 w-5 text-red-500" />
+                  Make a Donation
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Form {...donationForm}>
+                  <form onSubmit={donationForm.handleSubmit((data) => donateMutation.mutate(data))} className="space-y-4">
+                    <FormField
+                      control={donationForm.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Amount ($)</FormLabel>
+                          <FormControl>
+                            <Input type="number" min="1" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-red-500 hover:bg-red-600"
+                      disabled={donateMutation.isPending}
+                    >
+                      {donateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Donate Now
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

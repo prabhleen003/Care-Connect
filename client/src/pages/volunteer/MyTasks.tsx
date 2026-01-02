@@ -15,7 +15,7 @@ export default function MyTasks() {
     <div className="min-h-screen bg-background pb-12">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <h1 className="text-3xl font-display font-bold text-secondary mb-2">My Applications</h1>
         <p className="text-muted-foreground mb-8">Track your impact and task progress.</p>
 
@@ -23,14 +23,14 @@ export default function MyTasks() {
           <div className="flex justify-center p-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : tasks?.length === 0 ? (
+        ) : !tasks || tasks.length === 0 ? (
           <div className="text-center py-20 bg-muted/20 rounded-2xl border border-dashed">
             <h3 className="text-lg font-medium">You haven't applied to any causes yet.</h3>
           </div>
         ) : (
           <div className="grid gap-6">
-            {tasks?.map((task) => (
-              <TaskItem key={task.id} task={task} />
+            {tasks.map((task: any) => (
+              <TaskItem key={task.id || Math.random()} task={task} />
             ))}
           </div>
         )}
@@ -78,7 +78,7 @@ function TaskItem({ task }: { task: any }) {
       <div className="flex-1 p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-xl font-bold text-secondary mb-1">{task.cause.title}</h3>
+            <h3 className="text-xl font-bold text-secondary mb-1">{task.cause?.title || "Untitled Cause"}</h3>
             <p className="text-sm text-muted-foreground">{task.cause.location} • {task.cause.category}</p>
           </div>
           <Badge variant="outline">{task.cause.urgency > 7 ? "High Priority" : "Standard"}</Badge>

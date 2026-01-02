@@ -11,8 +11,11 @@ import NgoDashboard from "@/pages/ngo/Dashboard";
 import VolunteerDashboard from "@/pages/volunteer/Dashboard";
 import MyTasks from "@/pages/volunteer/MyTasks";
 import CauseDetails from "@/pages/CauseDetails";
+import DonationInsights from "@/pages/ngo/DonationInsights";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 // Protected Route Wrapper
 function ProtectedRoute({ 
@@ -38,10 +41,27 @@ function ProtectedRoute({
   }
 
   if (user.role !== allowedRole) {
-    return <NotFound />; // Or redirect to correct dashboard
+    return <NotFound />;
   }
 
   return <Component />;
+}
+
+function Layout({ children, title }: { children: React.ReactNode, title: string }) {
+  return (
+    <SidebarProvider>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <main className="flex-1 overflow-auto bg-muted/20">
+          <div className="p-4 border-b bg-background flex items-center gap-4">
+            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <h1 className="text-xl font-bold">{title}</h1>
+          </div>
+          {children}
+        </main>
+      </div>
+    </SidebarProvider>
+  );
 }
 
 function Router() {
@@ -54,20 +74,53 @@ function Router() {
       {/* Public cause details */}
       <Route path="/cause/:id" component={CauseDetails} />
 
+      {/* Community Feed */}
+      <Route path="/community">
+        {() => (
+          <Layout title="Community Feed">
+            <Community />
+          </Layout>
+        )}
+      </Route>
+
       {/* Protected NGO Routes */}
       <Route path="/dashboard/ngo">
-        {() => <ProtectedRoute component={NgoDashboard} allowedRole="ngo" />}
+        {() => (
+          <Layout title="NGO Dashboard">
+            <ProtectedRoute component={NgoDashboard} allowedRole="ngo" />
+          </Layout>
+        )}
       </Route>
       <Route path="/dashboard/ngo/causes">
-        {() => <ProtectedRoute component={NgoDashboard} allowedRole="ngo" />}
+        {() => (
+          <Layout title="My Causes">
+            <ProtectedRoute component={NgoDashboard} allowedRole="ngo" />
+          </Layout>
+        )}
       </Route>
 
       {/* Protected Volunteer Routes */}
       <Route path="/dashboard/volunteer">
-        {() => <ProtectedRoute component={VolunteerDashboard} allowedRole="volunteer" />}
+        {() => (
+          <Layout title="Volunteer Dashboard">
+            <ProtectedRoute component={VolunteerDashboard} allowedRole="volunteer" />
+          </Layout>
+        )}
       </Route>
       <Route path="/dashboard/volunteer/tasks">
-        {() => <ProtectedRoute component={MyTasks} allowedRole="volunteer" />}
+        {() => (
+          <Layout title="My Tasks">
+            <ProtectedRoute component={MyTasks} allowedRole="volunteer" />
+          </Layout>
+        )}
+      </Route>
+
+      <Route path="/dashboard/ngo/donations">
+        {() => (
+          <Layout title="Donation Insights">
+            <ProtectedRoute component={DonationInsights} allowedRole="ngo" />
+          </Layout>
+        )}
       </Route>
 
       <Route component={NotFound} />
@@ -75,7 +128,7 @@ function Router() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -85,5 +138,3 @@ function App() {
     </QueryClientProvider>
   );
 }
-
-export default App;
