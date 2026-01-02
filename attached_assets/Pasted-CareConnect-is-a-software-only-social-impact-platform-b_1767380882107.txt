@@ -1,0 +1,342 @@
+CareConnect is a software-only social impact platform built using (Rocket) backend + React.js frontend for seamless NGO–Volunteer collaboration. CareConnect is a website that helps people do social work together in an organized way.
+
+NGOs/organizations post real community problems (like food drives, education support, animal care, women welfare, etc.)
+
+Volunteers browse those causes, choose what matches their interest, and apply to help
+
+Once accepted, volunteers get tasks, update progress, and upload proof of their work
+
+NGOs review the proof and approve it, so only genuine work counts
+
+The website also tracks impact (how many causes solved, how many volunteers helped), making social work transparent and efficient
+
+Later, a donation/payment system can be added to support causes financially
+
+In short:
+
+CareConnect connects helpers to causes, avoids duplicate efforts, and makes sure real impact is created and verified.Here is your **highly efficient, phased, consistent, AI-ready prompt** to build **CareConnect** (software only, social cause) using **Rust + Rocket backend** and **React/Next.js frontend**, with clean UI/UX and future payment readiness.
+
+You can paste this exactly into your AI/LLM or teammate chat:
+
+---
+
+### **CareConnect – Full-Stack Development Prompt**
+
+You are a senior full-stack engineer AI. Build **CareConnect**, a software-only platform for NGO and volunteer collaboration.
+
+Follow these principles:
+
+* **Backend = Rust using Rocket**
+* **Frontend = React or Next.js**
+* **Communication = JSON REST APIs**
+* **Security = JWT + bcrypt + role-based access**
+* **MVP first, payments later**
+* **UI must be clean, professional, grid-based, minimal, modern**
+* **No hardware or blockchain**
+
+---
+
+---
+
+## **🧱 Phase 1 – Project Setup**
+
+### Backend (Rocket, Rust)
+
+1. Create a new Rocket Rust project
+2. Enable async support
+3. Add dependencies for:
+
+   * JWT auth
+   * bcrypt hashing
+   * database ORM (SQLx or Diesel)
+   * CORS handling
+4. Set up environment variables for:
+
+   * Secret key
+   * Database URL
+5. Create folder structure:
+
+```
+src/
+├ main.rs
+├ routes/auth.rs
+├ routes/causes.rs
+├ routes/tasks.rs
+├ models/user.rs
+├ models/cause.rs
+├ models/task.rs
+├ db.rs
+├ utils.rs
+```
+
+### Frontend (Next.js preferred)
+
+1. Initialize project
+2. Use **Tailwind CSS**
+3. Use a **minimal, social-impact focused theme**
+4. Use fonts like: `Inter` or `Poppins`
+5. Create folder structure:
+
+```
+app/
+├ page.js (Landing)
+├ login/page.js
+├ signup/ngo/page.js
+├ signup/volunteer/page.js
+├ dashboard/ngo/page.js
+├ dashboard/volunteer/page.js
+├ cause/[cause_id]/page.js
+├ task/[task_id]/page.js
+├ components/
+```
+
+---
+
+---
+
+## **🔐 Phase 2 – Authentication System**
+
+### Backend Tasks
+
+1. Create:
+
+   * `POST /api/auth/signup/ngo`
+   * `POST /api/auth/signup/volunteer`
+   * `POST /api/auth/login`
+2. Hash passwords using **bcrypt**
+3. Generate JWT token after signup/login:
+
+```
+Authorization: Bearer <token>
+```
+
+4. Include `role` and `user_id` inside JWT payload
+5. Protect all NGO/Volunteer routes by validating JWT
+
+### Frontend Tasks
+
+1. Build login UI with role toggle (NGO/Volunteer)
+2. On submit:
+
+```
+fetch("/api/auth/login", {method: "POST", body: {email, password, role}})
+```
+
+3. Store returned JWT token in `localStorage`
+4. Redirect:
+
+   * NGO → `/dashboard/ngo`
+   * Volunteer → `/dashboard/volunteer`
+
+---
+
+---
+
+## **📣 Phase 3 – NGO Cause Posting**
+
+### Backend Tasks
+
+1. Create cause endpoints:
+
+   * `POST /api/causes/create`
+   * `GET /api/ngo/causes/{ngo_id}`
+   * `GET /api/causes/open?category=&location=&urgency=`
+2. Cause table fields:
+
+```
+cause_id, ngo_id, title, description, category, location, urgency, status, created_at
+```
+
+3. Default `status = open`, `urgency = 0` if not provided
+
+### Frontend Tasks
+
+1. Build cause posting UI
+2. On submit:
+
+```
+fetch("/api/causes/create", {headers: {Authorization: Bearer <token>}})
+```
+
+3. Show list of posted causes on NGO dashboard in grid
+
+---
+
+---
+
+## **🔍 Phase 4 – Volunteer Cause Discovery & Apply**
+
+### Backend Tasks
+
+1. Create:
+
+   * `GET /api/causes/open`
+   * `POST /api/tasks/apply/{cause_id}`
+   * `GET /api/ngo/applications/{ngo_id}`
+2. Task/Application table fields:
+
+```
+task_id, cause_id, volunteer_id, status, proof_url, approved, updated_at
+```
+
+3. Default: `status = pending`, `approved = false`
+
+### Frontend Tasks
+
+1. Build cause discovery page
+2. Display cause cards:
+
+```
+{title, NGO name, category, location, urgency badge, Apply button}
+```
+
+3. On Apply click:
+
+```
+POST /api/tasks/apply/{cause_id}
+```
+
+---
+
+---
+
+## **🧾 Phase 5 – Task Progress & Proof Upload**
+
+### Backend Tasks
+
+1. Create:
+
+   * `PATCH /api/tasks/update/{task_id}`
+   * `POST /api/tasks/proof/upload/{task_id}`
+   * `POST /api/tasks/approve-proof/{task_id}` (for NGO)
+2. Store proof URL or base64 image path
+3. Update task status to `completed` only after NGO approval
+
+### Frontend Tasks
+
+1. Build `/task/{task_id}` page:
+
+   * Checklist
+   * Status dropdown
+   * Proof upload
+2. Proof upload sends:
+
+```
+POST /api/tasks/proof/upload/{task_id}
+```
+
+3. NGO reviews and approves → updates `approved = true`
+
+---
+
+---
+
+## **📊 Phase 6 – Impact Tracking System**
+
+### Backend Tasks
+
+1. Create:
+
+   * `GET /api/impact/stats`
+2. Stats must calculate:
+
+   * Total NGOs
+   * Total volunteers
+   * Causes completed
+   * Volunteer hours/tasks solved
+3. Return JSON
+
+### Frontend Tasks
+
+1. Show stats on landing page
+2. Build impact feed (`/impact`) later if needed
+
+---
+
+---
+
+## **🎨 Phase 7 – UI/UX Theme Definition**
+
+Design rules:
+
+* **Primary Color:** Deep navy or NGO-friendly teal (professional, soft, clean)
+* **Layout:** Grid-based cards with rounded corners, soft shadows
+* **Tone:** Professional, mission-driven, modern
+* **UX Must Include:**
+
+  * Clear redirects
+  * Toast messages for API success/fail
+  * Consistent spacing and padding
+  * No clutter
+  * Minimal icons (lucide-react optional)
+
+Pages must feel like: **Trustworthy, clean, social-impact focused, internship-ready**
+
+---
+
+---
+
+## **💰 Phase 8 – Future Payment Planning (Not Now)**
+
+Prepare system to add later:
+
+1. Donation page UI
+2. DB column:
+
+```
+amount_raised (int, default 0)
+```
+
+3. Reserve API route:
+
+```
+POST /api/donate/{cause_id}
+```
+
+Payment gateways (Razorpay/Stripe/UPI) will be added **after MVP works end-to-end**
+
+---
+
+---
+
+## **🌍 Phase 9 – Frontend ↔ Backend Secure Communication**
+
+Every frontend API call must:
+
+1. Send JWT in headers for protected routes
+2. Handle JSON only
+3. Follow this pattern:
+
+```
+fetch("/api/route", {
+   method: "POST/GET/PATCH",
+   headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <token>"
+   },
+   body: JSON.stringify(data)
+})
+```
+
+Backend must always:
+
+* Validate token
+* Return JSON + proper HTTP status codes
+
+---
+
+---
+
+## **Final Expected Deliverables**
+
+1. Fully working Rocket backend APIs
+2. Connected Next.js frontend pages
+3. Secure role-based routing
+4. Proof upload + approval workflow
+5. Impact stats endpoint
+6. Clean professional UI
+7. Payment-ready DB schema (no integration yet)
+
+---
+
+If you want, I can also generate a **Mermaid architecture diagram** or **page UI layout mockup images** next. Just say the word.
