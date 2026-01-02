@@ -1,5 +1,5 @@
 import { IStorage } from "./storage";
-import { users, causes, tasks, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask } from "@shared/schema";
+import { users, causes, tasks, donations, posts, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask, type InsertDonation, type InsertPost, type Donation, type Post } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import session from "express-session";
@@ -63,9 +63,78 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(causes).where(eq(causes.ngoId, ngoId));
   }
 
+  async getTask(id: number): Promise<Task | undefined> {
+    if (isNaN(id)) return undefined;
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
+  }
+
   async createTask(task: InsertTask): Promise<Task> {
     const [newTask] = await db.insert(tasks).values(task).returning();
     return newTask;
+  }
+
+  async createDonation(donation: InsertDonation): Promise<Donation> {
+    const [newDonation] = await db.insert(donations).values(donation).returning();
+    return newDonation;
+  }
+
+  async getDonationsByNgo(ngoId: number): Promise<Donation[]> {
+    const result = await db
+      .select({ donation: donations })
+      .from(donations)
+      .innerJoin(causes, eq(donations.causeId, causes.id))
+      .where(eq(causes.ngoId, ngoId));
+    return result.map(r => r.donation);
+  }
+
+  async getDonationAnalytics(ngoId: number) {
+    const allDonations = await db
+      .select({ 
+        donation: donations,
+        cause: causes 
+      })
+      .from(donations)
+      .innerJoin(causes, eq(donations.causeId, causes.id))
+      .where(eq(causes.ngoId, ngoId));
+
+    const total = allDonations.reduce((sum, d) => sum + Number(d.donation.amount), 0);
+    
+    const byCauseMap = new Map<number, { title: string, amount: number }>();
+    allDonations.forEach(d => {
+      const current = byCauseMap.get(d.cause.id) || { title: d.cause.title, amount: 0 };
+      byCauseMap.set(d.cause.id, { ...current, amount: current.amount + Number(d.donation.amount) });
+    });
+
+    const trendsMap = new Map<string, number>();
+    allDonations.forEach(d => {
+      const date = d.donation.createdAt?.toISOString().split('T')[0] || 'unknown';
+      trendsMap.set(date, (trendsMap.get(date) || 0) + Number(d.donation.amount));
+    });
+
+    return {
+      totalDonations: total,
+      byCause: Array.from(byCauseMap.entries()).map(([id, data]) => ({ causeId: id, ...data })),
+      trends: Array.from(trendsMap.entries()).map(([date, amount]) => ({ date, amount })).sort((a, b) => a.date.localeCompare(b.date)),
+    };
+  }
+
+  async createPost(post: InsertPost): Promise<Post> {
+    const [newPost] = await db.insert(posts).values(post).returning();
+    return newPost;
+  }
+
+  async getPosts(): Promise<(Post & { author: User })[]> {
+    const result = await db
+      .select({
+        post: posts,
+        author: users
+      })
+      .from(posts)
+      .innerJoin(users, eq(posts.authorId, users.id))
+      .orderBy(desc(posts.createdAt));
+    
+    return result.map(r => ({ ...r.post, author: r.author }));
   }
 
   async getTasksByVolunteer(volunteerId: number): Promise<Task[]> {
@@ -89,6 +158,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTask(id: number): Promise<Task | undefined> {
+    if (isNaN(id)) return undefined;
     const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
     return task;
   }
@@ -125,8 +195,8 @@ export class DatabaseStorage implements IStorage {
     return {
       totalNgos: Number(ngoCount.count),
       totalVolunteers: Number(volCount.count),
-      causesCompleted: Number(completedTasks.count), // Approximation
-      volunteerHours: Number(completedTasks.count) * 4, // Rough estimate 4h per task
+      causesCompleted: Number(completedTasks.count),
+      volunteerHours: Number(completedTasks.count) * 4,
     };
   }
 }
