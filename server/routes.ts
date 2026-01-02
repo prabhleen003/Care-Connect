@@ -30,6 +30,12 @@ export async function registerRoutes(
     res.json(cause);
   });
 
+  app.get(api.tasks.get.path, async (req, res) => {
+    const task = await storage.getTask(Number(req.params.id));
+    if (!task) return res.sendStatus(404);
+    res.json(task);
+  });
+
   app.get(api.causes.getByNgo.path, async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== 'ngo') return res.sendStatus(401);
     const causes = await storage.getCausesByNgo(req.user.id);
@@ -78,6 +84,39 @@ export async function registerRoutes(
     if (!req.isAuthenticated() || req.user.role !== 'ngo') return res.sendStatus(401);
     const task = await storage.approveTask(Number(req.params.id));
     res.json(task);
+  });
+
+  // Donations
+  app.post(api.donations.create.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'volunteer') return res.sendStatus(401);
+    const input = api.donations.create.input.parse(req.body);
+    const donation = await storage.createDonation({ ...input, volunteerId: req.user.id });
+    res.status(201).json(donation);
+  });
+
+  app.get(api.donations.listByNgo.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'ngo') return res.sendStatus(401);
+    const donations = await storage.getDonationsByNgo(req.user.id);
+    res.json(donations);
+  });
+
+  app.get(api.donations.analytics.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'ngo') return res.sendStatus(401);
+    const analytics = await storage.getDonationAnalytics(req.user.id);
+    res.json(analytics);
+  });
+
+  // Posts
+  app.get(api.posts.list.path, async (req, res) => {
+    const posts = await storage.getPosts();
+    res.json(posts);
+  });
+
+  app.post(api.posts.create.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const input = api.posts.create.input.parse(req.body);
+    const post = await storage.createPost({ ...input, authorId: req.user.id });
+    res.status(201).json(post);
   });
 
   // Impact

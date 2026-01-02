@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertUserSchema, insertCauseSchema, insertTaskSchema, users, causes, tasks } from './schema';
+import { insertUserSchema, insertCauseSchema, insertTaskSchema, insertDonationSchema, insertPostSchema, users, causes, tasks, donations, posts } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -117,6 +117,14 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+    get: {
+      method: 'GET' as const,
+      path: '/api/tasks/:id',
+      responses: {
+        200: z.custom<typeof tasks.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
     updateStatus: {
       method: 'PATCH' as const,
       path: '/api/tasks/:id/status',
@@ -140,6 +148,55 @@ export const api = {
       path: '/api/tasks/:id/approve',
       responses: {
         200: z.custom<typeof tasks.$inferSelect>(),
+        401: errorSchemas.unauthorized,
+      },
+    },
+  },
+  donations: {
+    create: {
+      method: 'POST' as const,
+      path: '/api/donations',
+      input: insertDonationSchema.omit({ volunteerId: true }),
+      responses: {
+        201: z.custom<typeof donations.$inferSelect>(),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    listByNgo: {
+      method: 'GET' as const,
+      path: '/api/ngo/donations',
+      responses: {
+        200: z.array(z.custom<typeof donations.$inferSelect>()),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    analytics: {
+      method: 'GET' as const,
+      path: '/api/ngo/donations/analytics',
+      responses: {
+        200: z.object({
+          totalDonations: z.number(),
+          byCause: z.array(z.object({ causeId: z.number(), title: z.string(), amount: z.number() })),
+          trends: z.array(z.object({ date: z.string(), amount: z.number() })),
+        }),
+        401: errorSchemas.unauthorized,
+      },
+    }
+  },
+  posts: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/posts',
+      responses: {
+        200: z.array(z.custom<typeof posts.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/posts',
+      input: insertPostSchema.omit({ authorId: true }),
+      responses: {
+        201: z.custom<typeof posts.$inferSelect>(),
         401: errorSchemas.unauthorized,
       },
     },

@@ -1,0 +1,91 @@
+Add these features to the existing website:
+
+Donations Module
+
+Volunteers can donate directly to any cause.
+
+NGOs must have a dashboard to analyze donations visually using:
+
+Graphs
+
+Charts
+
+Trend analytics
+
+Category-wise and time-wise donation breakdown
+
+Include filters like: date range, cause, donation amount
+
+Prepare system for payment gateway later, but for now build donation storage and analysis only.
+
+Fix “My Tasks” Error
+
+When a volunteer clicks My Tasks (/my-tasks) or a specific task card, an error appears.
+
+Debug and fix it by ensuring:
+
+Tasks load correctly from backend
+
+No null/undefined task IDs are passed
+
+The task details page opens without crashing
+
+Proper error handling + fallback UI if data is missing
+
+Add logs to detect the root cause and ensure task click always routes to a valid task page.
+
+Community Blogs Section
+
+Create a Blogs area (/community) where:
+
+NGOs can post updates, announcements, stories, or community messages.
+
+Posts must support: images, videos, and text together.
+
+Feed layout should feel like a social media post system.
+
+Add ability for volunteers to also post in the same section.
+
+Each post must allow:
+
+Uploading media (images/videos)
+
+Writing captions/text
+
+Sharing links
+
+Auto timestamp and profile name
+
+Community Posting System
+
+Both NGOs and volunteers can create posts similar to social media:
+
+Media + caption + text
+
+Scrollable feed
+
+Likes and share buttons (optional)
+
+NGO posts can also include: impact achievements, donation appeals, awareness content.
+
+Donation Analytics Visualization
+
+NGO dashboard must include:
+
+A section: Donation Insights
+
+Visual graphs for total donations, weekly/monthly trends, and cause-wise performance
+
+A clean, professional analytics layout
+
+Rules to Maintain
+
+Keep UI clean, professional, and well-structured
+
+Ensure frontend passes valid IDs and data only
+
+Fix crashes with proper error boundaries and fallback messages
+
+No payments integration now, but database must be ready for it later
+
+No hardware or blockchain — software only
