@@ -1,5 +1,5 @@
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { Home, Inbox, LayoutDashboard, Heart, MessageSquare, PlusCircle, BarChart3 } from "lucide-react";
+import { Home, Inbox, LayoutDashboard, Heart, MessageSquare, PlusCircle, BarChart3, Building2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -11,12 +11,14 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/dashboard/ngo", icon: LayoutDashboard },
     { title: "My Causes", url: "/dashboard/ngo/causes", icon: Heart },
     { title: "Donations", url: "/dashboard/ngo/donations", icon: BarChart3 },
+    { title: "NGOs", url: "/ngos", icon: Building2 },
     { title: "Community", url: "/community", icon: MessageSquare },
   ];
 
   const volunteerItems = [
     { title: "Browse Causes", url: "/dashboard/volunteer", icon: Home },
     { title: "My Tasks", url: "/dashboard/volunteer/tasks", icon: Inbox },
+    { title: "NGOs", url: "/volunteer/ngos", icon: Building2 },
     { title: "Community", url: "/community", icon: MessageSquare },
   ];
 

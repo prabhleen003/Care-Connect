@@ -13,6 +13,7 @@ import MyTasks from "@/pages/volunteer/MyTasks";
 import CauseDetails from "@/pages/CauseDetails";
 import Community from "@/pages/Community";
 import DonationInsights from "@/pages/ngo/DonationInsights";
+import NgoList from "@/pages/NgoList";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -74,6 +75,22 @@ function Router() {
       
       {/* Public cause details */}
       <Route path="/cause/:id" component={CauseDetails} />
+
+      <Route path="/ngos">
+        {() => (
+          <Layout title="Registered NGOs">
+            <ProtectedRoute component={NgoList} allowedRole="ngo" />
+          </Layout>
+        )}
+      </Route>
+
+      <Route path="/volunteer/ngos">
+        {() => (
+          <Layout title="Partner NGOs">
+            <ProtectedRoute component={NgoList} allowedRole="volunteer" />
+          </Layout>
+        )}
+      </Route>
 
       {/* Community Feed */}
       <Route path="/community">

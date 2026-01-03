@@ -171,6 +171,12 @@ export async function registerRoutes(
     res.json(stats);
   });
 
+  app.get("/api/ngos", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const ngos = await storage.getNgos();
+    res.json(ngos);
+  });
+
   // Seed Data (Auto-run if empty)
   (async () => {
     if (process.env.NODE_ENV !== 'production') {

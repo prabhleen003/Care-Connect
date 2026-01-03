@@ -37,6 +37,7 @@ export interface IStorage {
   createComment(comment: InsertPostComment): Promise<PostComment>;
   
   getImpactStats(): Promise<any>;
+  getNgos(): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -305,6 +306,10 @@ export class DatabaseStorage implements IStorage {
       causesCompleted: Number(completedTasks.count),
       volunteerHours: Number(completedTasks.count) * 4,
     };
+  }
+
+  async getNgos(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, "ngo"));
   }
 }
 
