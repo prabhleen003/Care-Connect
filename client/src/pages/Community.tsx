@@ -305,19 +305,3 @@ export default function Community() {
     </div>
   );
 }
-    </div>
-  );
-}
-        {posts?.length === 0 && (
-          <div className="text-center py-20 bg-muted/10 rounded-2xl border-2 border-dashed">
-            <div className="bg-background w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-              <ImageIcon className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-bold text-secondary">No stories yet</h3>
-            <p className="text-muted-foreground">Be the first to share an update with the community!</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
