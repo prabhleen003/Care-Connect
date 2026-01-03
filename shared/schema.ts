@@ -31,6 +31,8 @@ export const tasks = pgTable("tasks", {
   status: text("status", { enum: ["pending", "in_progress", "completed"] }).default("pending"),
   proofUrl: text("proof_url"),
   approved: boolean("approved").default(false),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

@@ -46,10 +46,13 @@ export async function registerRoutes(
   app.post(api.tasks.apply.path, async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== 'volunteer') return res.sendStatus(401);
     const causeId = Number(req.params.causeId);
+    const { startDate, endDate } = req.body;
     const task = await storage.createTask({
       causeId,
       volunteerId: req.user.id,
-      status: 'pending'
+      status: 'pending',
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null,
     });
     res.status(201).json(task);
   });

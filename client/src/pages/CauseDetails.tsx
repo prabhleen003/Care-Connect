@@ -1,27 +1,38 @@
 import { useCause } from "@/hooks/use-causes";
-import { useApplyForCause, useUploadProof, useUpdateTaskStatus } from "@/hooks/use-tasks";
+import { useApplyForCause, useUploadProof, useUpdateTaskStatus, useVolunteerTasks } from "@/hooks/use-tasks";
 import { useAuth } from "@/hooks/use-auth";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams, Link } from "wouter";
-import { Loader2, MapPin, Tag, AlertCircle, CheckCircle, Heart } from "lucide-react";
+import { Loader2, MapPin, Tag, AlertCircle, CheckCircle, Heart, Calendar as CalendarIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertDonationSchema } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export default function CauseDetails() {
   const { id } = useParams<{ id: string }>();
   const { data: cause, isLoading } = useCause(Number(id));
+  const { data: tasks } = useVolunteerTasks();
   const applyMutation = useApplyForCause();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
+
+  const hasApplied = tasks?.some(t => t.causeId === Number(id));
 
   const donationForm = useForm({
     resolver: zodResolver(insertDonationSchema.omit({ volunteerId: true, causeId: true })),
@@ -42,6 +53,22 @@ export default function CauseDetails() {
       donationForm.reset();
     },
   });
+
+  const handleApply = () => {
+    if (!dateRange.from || !dateRange.to) {
+      toast({ title: "Please select a date range", variant: "destructive" });
+      return;
+    }
+    applyMutation.mutate({ 
+      causeId: Number(id), 
+      startDate: dateRange.from, 
+      endDate: dateRange.to 
+    }, {
+      onSuccess: () => {
+        setIsApplyDialogOpen(false);
+      }
+    });
+  };
 
   if (isLoading) {
     return (
@@ -144,19 +171,73 @@ export default function CauseDetails() {
                   <Button variant="outline" className="w-full h-12" disabled>
                     NGOs cannot apply
                   </Button>
-                ) : (
-                  <Button 
-                    className="w-full h-12 text-lg shadow-lg shadow-primary/20" 
-                    onClick={() => applyMutation.mutate(cause.id)}
-                    disabled={applyMutation.isPending}
-                  >
-                    {applyMutation.isPending ? (
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    ) : (
-                      <CheckCircle className="mr-2 h-5 w-5" />
-                    )}
-                    Apply Now
+                ) : hasApplied ? (
+                  <Button className="w-full h-12 text-lg bg-green-500 hover:bg-green-600" disabled>
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Applied
                   </Button>
+                ) : (
+                  <Dialog open={isApplyDialogOpen} onOpenChange={setIsApplyDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full h-12 text-lg shadow-lg shadow-primary/20">
+                        <CheckCircle className="mr-2 h-5 w-5" />
+                        Apply Now
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Select Volunteering Timeline</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">Timeline (From - To)</label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !dateRange.from && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateRange.from ? (
+                                  dateRange.to ? (
+                                    <>
+                                      {format(dateRange.from, "LLL dd, y")} -{" "}
+                                      {format(dateRange.to, "LLL dd, y")}
+                                    </>
+                                  ) : (
+                                    format(dateRange.from, "LLL dd, y")
+                                  )
+                                ) : (
+                                  <span>Pick a date range</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={dateRange.from}
+                                selected={{ from: dateRange.from, to: dateRange.to }}
+                                onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                                numberOfMonths={2}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={handleApply} 
+                        disabled={applyMutation.isPending || !dateRange.from || !dateRange.to}
+                        className="w-full"
+                      >
+                        {applyMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Final Apply
+                      </Button>
+                    </DialogContent>
+                  </Dialog>
                 )}
               </div>
             </CardContent>
