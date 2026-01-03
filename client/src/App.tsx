@@ -11,6 +11,7 @@ import NgoDashboard from "@/pages/ngo/Dashboard";
 import VolunteerDashboard from "@/pages/volunteer/Dashboard";
 import MyTasks from "@/pages/volunteer/MyTasks";
 import CauseDetails from "@/pages/CauseDetails";
+import Community from "@/pages/Community";
 import DonationInsights from "@/pages/ngo/DonationInsights";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
