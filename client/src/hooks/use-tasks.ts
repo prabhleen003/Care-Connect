@@ -4,7 +4,7 @@ import { Task } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 // Volunteer: Get my applications
-export function useMyTasks() {
+export function useVolunteerTasks() {
   return useQuery({
     queryKey: [api.tasks.listByVolunteer.path],
     queryFn: async () => {
@@ -33,11 +33,12 @@ export function useApplyForCause() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (causeId: number) => {
+    mutationFn: async ({ causeId, startDate, endDate }: { causeId: number; startDate: Date; endDate: Date }) => {
       const url = buildUrl(api.tasks.apply.path, { causeId });
       const res = await fetch(url, {
         method: api.tasks.apply.method,
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ startDate, endDate }),
       });
       if (!res.ok) throw new Error("Failed to apply");
       return api.tasks.apply.responses[201].parse(await res.json());

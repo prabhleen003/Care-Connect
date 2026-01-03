@@ -1,4 +1,4 @@
-import { useMyTasks, useUploadProof, useUpdateTaskStatus } from "@/hooks/use-tasks";
+import { useVolunteerTasks, useUploadProof, useUpdateTaskStatus } from "@/hooks/use-tasks";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Loader2, CheckCircle2, Clock, Upload, Link as LinkIcon } from "lucide-r
 import { useState } from "react";
 
 export default function MyTasks() {
-  const { data: tasks, isLoading } = useMyTasks();
+  const { data: tasks, isLoading } = useVolunteerTasks();
 
   return (
     <div className="min-h-screen bg-background pb-12">
