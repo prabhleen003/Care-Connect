@@ -1,5 +1,35 @@
-import { IStorage } from "./storage";
-import { users, causes, tasks, donations, posts, postLikes, postComments, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask, type InsertDonation, type InsertPost, type Donation, type Post, type PostLike, type PostComment } from "@shared/schema";
+export interface IStorage {
+  sessionStore: any;
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  
+  createCause(cause: InsertCause): Promise<Cause>;
+  getCauses(filters?: { category?: string; location?: string; urgency?: string }): Promise<Cause[]>;
+  getCause(id: number): Promise<Cause | undefined>;
+  getCausesByNgo(ngoId: number): Promise<Cause[]>;
+  
+  createTask(task: InsertTask): Promise<Task>;
+  getTask(id: number): Promise<Task & { cause: Cause, volunteer: User } | undefined>;
+  getTasksByVolunteer(volunteerId: number): Promise<Task[]>;
+  getTasksByNgo(ngoId: number): Promise<(Task & { cause: Cause, volunteer: User })[]>;
+  updateTaskStatus(id: number, status: string): Promise<Task>;
+  deleteTask(id: number): Promise<void>;
+  updateTaskProof(id: number, proofUrl: string): Promise<Task>;
+  approveTask(id: number): Promise<Task>;
+  
+  createDonation(donation: InsertDonation): Promise<Donation>;
+  getDonationsByNgo(ngoId: number): Promise<Donation[]>;
+  getDonationAnalytics(ngoId: number): Promise<any>;
+  
+  createPost(post: InsertPost): Promise<Post>;
+  getPosts(userId?: number): Promise<PostResponse[]>;
+  toggleLike(postId: number, userId: number): Promise<{ liked: boolean }>;
+  createComment(comment: InsertPostComment): Promise<PostComment>;
+  
+  getImpactStats(): Promise<any>;
+}
+import { users, causes, tasks, donations, posts, postLikes, postComments, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask, type InsertDonation, type InsertPost, type Donation, type Post, type PostLike, type PostComment, type InsertPostComment, type PostResponse } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import session from "express-session";
@@ -63,10 +93,21 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(causes).where(eq(causes.ngoId, ngoId));
   }
 
-  async getTask(id: number): Promise<Task | undefined> {
+  async getTask(id: number): Promise<Task & { cause: Cause, volunteer: User } | undefined> {
     if (isNaN(id)) return undefined;
-    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
-    return task;
+    const [result] = await db
+      .select({
+        task: tasks,
+        cause: causes,
+        volunteer: users
+      })
+      .from(tasks)
+      .innerJoin(causes, eq(tasks.causeId, causes.id))
+      .innerJoin(users, eq(tasks.volunteerId, users.id))
+      .where(eq(tasks.id, id));
+    
+    if (!result) return undefined;
+    return { ...result.task, cause: result.cause, volunteer: result.volunteer };
   }
 
   async createTask(task: InsertTask): Promise<Task> {
@@ -128,17 +169,63 @@ export class DatabaseStorage implements IStorage {
     return newPost;
   }
 
-  async getPosts(): Promise<(Post & { author: User })[]> {
-    const result = await db
+  async getPosts(userId?: number): Promise<PostResponse[]> {
+    const allPosts = await db
       .select({
         post: posts,
-        author: users
+        author: users,
       })
       .from(posts)
       .innerJoin(users, eq(posts.authorId, users.id))
       .orderBy(desc(posts.createdAt));
-    
-    return result.map(r => ({ ...r.post, author: r.author }));
+
+    const postResponses = await Promise.all(allPosts.map(async (p) => {
+      const likes = await db.select().from(postLikes).where(eq(postLikes.postId, p.post.id));
+      const comments = await db
+        .select({
+          comment: postComments,
+          author: users,
+        })
+        .from(postComments)
+        .innerJoin(users, eq(postComments.authorId, users.id))
+        .where(eq(postComments.postId, p.post.id));
+
+      const isLiked = userId ? likes.some(l => l.userId === userId) : false;
+
+      return {
+        ...p.post,
+        author: { id: p.author.id, name: p.author.name, role: p.author.role },
+        likesCount: likes.length,
+        commentsCount: comments.length,
+        isLiked,
+        comments: comments.map(c => ({
+          ...c.comment,
+          author: { name: c.author.name }
+        }))
+      };
+    }));
+
+    return postResponses;
+  }
+
+  async toggleLike(postId: number, userId: number): Promise<{ liked: boolean }> {
+    const [existing] = await db
+      .select()
+      .from(postLikes)
+      .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
+
+    if (existing) {
+      await db.delete(postLikes).where(eq(postLikes.id, existing.id));
+      return { liked: false };
+    } else {
+      await db.insert(postLikes).values({ postId, userId });
+      return { liked: true };
+    }
+  }
+
+  async createComment(comment: InsertPostComment): Promise<PostComment> {
+    const [newComment] = await db.insert(postComments).values(comment).returning();
+    return newComment;
   }
 
   async getTasksByVolunteer(volunteerId: number): Promise<Task[]> {
@@ -161,10 +248,21 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => ({ ...r.task, cause: r.cause, volunteer: r.volunteer }));
   }
 
-  async getTask(id: number): Promise<Task | undefined> {
+  async getTask(id: number): Promise<Task & { cause: Cause, volunteer: User } | undefined> {
     if (isNaN(id)) return undefined;
-    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
-    return task;
+    const [result] = await db
+      .select({
+        task: tasks,
+        cause: causes,
+        volunteer: users
+      })
+      .from(tasks)
+      .innerJoin(causes, eq(tasks.causeId, causes.id))
+      .innerJoin(users, eq(tasks.volunteerId, users.id))
+      .where(eq(tasks.id, id));
+    
+    if (!result) return undefined;
+    return { ...result.task, cause: result.cause, volunteer: result.volunteer };
   }
 
   async updateTaskStatus(id: number, status: string): Promise<Task> {

@@ -137,8 +137,25 @@ export async function registerRoutes(
 
   // Posts
   app.get(api.posts.list.path, async (req, res) => {
-    const posts = await storage.getPosts();
+    const userId = req.isAuthenticated() ? req.user.id : undefined;
+    const posts = await storage.getPosts(userId);
     res.json(posts);
+  });
+
+  app.post("/api/posts/:id/like", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const result = await storage.toggleLike(Number(req.params.id), req.user.id);
+    res.json(result);
+  });
+
+  app.post("/api/posts/:id/comments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const comment = await storage.createComment({
+      postId: Number(req.params.id),
+      authorId: req.user.id,
+      content: req.body.content,
+    });
+    res.status(201).json(comment);
   });
 
   app.post(api.posts.create.path, async (req, res) => {
