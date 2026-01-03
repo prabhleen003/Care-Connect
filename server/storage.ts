@@ -169,10 +169,14 @@ export class DatabaseStorage implements IStorage {
 
   async updateTaskStatus(id: number, status: string): Promise<Task> {
     const [updated] = await db.update(tasks)
-      .set({ status })
+      .set({ status: status as any })
       .where(eq(tasks.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
   }
 
   async updateTaskProof(id: number, proofUrl: string): Promise<Task> {

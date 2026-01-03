@@ -1,4 +1,4 @@
-import { useVolunteerTasks, useUploadProof, useUpdateTaskStatus } from "@/hooks/use-tasks";
+import { useVolunteerTasks, useUploadProof, useUpdateTaskStatus, useOptOutTask } from "@/hooks/use-tasks";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +42,7 @@ export default function MyTasks() {
 function TaskItem({ task }: { task: any }) {
   const uploadProof = useUploadProof();
   const updateStatus = useUpdateTaskStatus();
+  const optOut = useOptOutTask();
   const [proofUrl, setProofUrl] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -58,21 +59,28 @@ function TaskItem({ task }: { task: any }) {
     updateStatus.mutate({ taskId: task.id, status: "in_progress" });
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "approved": return "text-green-600";
+      case "declined": return "text-red-600";
+      case "in_consideration": return "text-yellow-600";
+      case "completed": return "text-green-600";
+      default: return "text-primary";
+    }
+  };
+
   return (
     <Card className="flex flex-col md:flex-row overflow-hidden border-border/60 shadow-sm hover:shadow-md transition-all">
       <div className="w-full md:w-48 bg-muted/30 flex items-center justify-center p-6 border-b md:border-b-0 md:border-r">
-        {task.status === "completed" ? (
-          <div className="text-center text-green-600">
+        <div className={cn("text-center", getStatusColor(task.status))}>
+          {task.status === "completed" ? (
             <CheckCircle2 className="h-10 w-10 mx-auto mb-2" />
-            <span className="font-bold text-sm">Completed</span>
-            {task.approved && <div className="text-xs mt-1 bg-green-100 text-green-800 px-2 py-1 rounded-full">Verified</div>}
-          </div>
-        ) : (
-          <div className="text-center text-primary">
+          ) : (
             <Clock className="h-10 w-10 mx-auto mb-2" />
-            <span className="font-bold text-sm capitalize">{task.status.replace("_", " ")}</span>
-          </div>
-        )}
+          )}
+          <span className="font-bold text-sm capitalize">{task.status.replace("_", " ")}</span>
+          {task.approved && <div className="text-xs mt-1 bg-green-100 text-green-800 px-2 py-1 rounded-full">Verified</div>}
+        </div>
       </div>
       
       <div className="flex-1 p-6">
@@ -85,7 +93,18 @@ function TaskItem({ task }: { task: any }) {
         </div>
 
         <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t">
-          {task.status === "pending" && (
+          {(task.status === "pending" || task.status === "in_consideration" || task.status === "approved") && (
+            <Button 
+              variant="ghost" 
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => optOut.mutate(task.id)}
+              disabled={optOut.isPending}
+            >
+              Opt Out
+            </Button>
+          )}
+
+          {task.status === "approved" && (
              <Button onClick={handleStartTask} disabled={updateStatus.isPending}>
                Start Task
              </Button>

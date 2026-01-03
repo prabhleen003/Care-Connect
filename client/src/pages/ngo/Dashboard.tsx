@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useApproveTask } from "@/hooks/use-tasks";
-import { Loader2, CheckCircle2, LayoutDashboard, ListTodo } from "lucide-react";
+import { useApproveTask, useUpdateTaskStatus } from "@/hooks/use-tasks";
+import { Loader2, CheckCircle2, LayoutDashboard, ListTodo, Clock, XCircle } from "lucide-react";
 import { Link } from "wouter";
 
 export default function NgoDashboard() {
@@ -18,6 +18,7 @@ export default function NgoDashboard() {
   const { data: causes, isLoading: causesLoading } = useNgoCauses();
   const { data: tasks, isLoading: tasksLoading } = useNgoTasks();
   const approveTask = useApproveTask();
+  const updateStatus = useUpdateTaskStatus();
 
   if (causesLoading || tasksLoading) {
     return (
@@ -153,14 +154,68 @@ export default function NgoDashboard() {
                    <div key={task.id} className="p-4 border-t grid grid-cols-4 items-center text-sm">
                      <div className="font-medium text-secondary">{task.volunteer?.name}</div>
                      <div className="truncate pr-4">{task.cause?.title}</div>
-                     <div>
+                     <div className="flex items-center gap-2">
                        <Badge variant={
                          task.status === 'completed' && task.approved ? 'default' : 
                          task.status === 'completed' ? 'secondary' : 
-                         task.status === 'in_progress' ? 'outline' : 'secondary'
+                         task.status === 'in_progress' ? 'outline' : 
+                         task.status === 'declined' ? 'destructive' : 'secondary'
                        } className={task.status === 'completed' && task.approved ? 'bg-green-500' : ''}>
                          {task.approved ? 'Approved' : task.status.replace('_', ' ')}
                        </Badge>
+                       {task.status === 'pending' && (
+                         <div className="flex gap-1">
+                           <Button 
+                             size="sm" 
+                             variant="ghost" 
+                             className="h-7 w-7 p-0 text-yellow-600"
+                             onClick={() => updateStatus.mutate({ taskId: task.id, status: 'in_consideration' })}
+                             title="In Consideration"
+                           >
+                             <Clock className="h-4 w-4" />
+                           </Button>
+                           <Button 
+                             size="sm" 
+                             variant="ghost" 
+                             className="h-7 w-7 p-0 text-green-600"
+                             onClick={() => updateStatus.mutate({ taskId: task.id, status: 'approved' })}
+                             title="Approve"
+                           >
+                             <CheckCircle2 className="h-4 w-4" />
+                           </Button>
+                           <Button 
+                             size="sm" 
+                             variant="ghost" 
+                             className="h-7 w-7 p-0 text-red-600"
+                             onClick={() => updateStatus.mutate({ taskId: task.id, status: 'declined' })}
+                             title="Decline"
+                           >
+                             <XCircle className="h-4 w-4" />
+                           </Button>
+                         </div>
+                       )}
+                       {task.status === 'in_consideration' && (
+                         <div className="flex gap-1">
+                           <Button 
+                             size="sm" 
+                             variant="ghost" 
+                             className="h-7 w-7 p-0 text-green-600"
+                             onClick={() => updateStatus.mutate({ taskId: task.id, status: 'approved' })}
+                             title="Approve"
+                           >
+                             <CheckCircle2 className="h-4 w-4" />
+                           </Button>
+                           <Button 
+                             size="sm" 
+                             variant="ghost" 
+                             className="h-7 w-7 p-0 text-red-600"
+                             onClick={() => updateStatus.mutate({ taskId: task.id, status: 'declined' })}
+                             title="Decline"
+                           >
+                             <XCircle className="h-4 w-4" />
+                           </Button>
+                         </div>
+                       )}
                      </div>
                      <div className="text-muted-foreground">
                        {task.updatedAt ? new Date(task.updatedAt).toLocaleDateString() : '-'}

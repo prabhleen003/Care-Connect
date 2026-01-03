@@ -79,13 +79,37 @@ export function useUploadProof() {
   });
 }
 
+// Volunteer: Opt out of a task
+export function useOptOutTask() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (taskId: number) => {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to opt out");
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.tasks.listByVolunteer.path] });
+      queryClient.invalidateQueries({ queryKey: [api.tasks.listByNgo.path] });
+      toast({ title: "Opted out successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
 // Volunteer: Update status (e.g., mark as in_progress)
 export function useUpdateTaskStatus() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ taskId, status }: { taskId: number; status: "pending" | "in_progress" | "completed" }) => {
+    mutationFn: async ({ taskId, status }: { taskId: number; status: "pending" | "in_consideration" | "approved" | "declined" | "in_progress" | "completed" }) => {
       const url = buildUrl(api.tasks.updateStatus.path, { id: taskId });
       const res = await fetch(url, {
         method: api.tasks.updateStatus.method,
@@ -97,6 +121,7 @@ export function useUpdateTaskStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.tasks.listByVolunteer.path] });
+      queryClient.invalidateQueries({ queryKey: [api.tasks.listByNgo.path] });
       toast({ title: "Status Updated" });
     },
   });

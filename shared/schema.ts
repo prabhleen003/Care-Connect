@@ -28,7 +28,7 @@ export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   causeId: integer("cause_id").notNull(),
   volunteerId: integer("volunteer_id").notNull(),
-  status: text("status", { enum: ["pending", "in_progress", "completed"] }).default("pending"),
+  status: text("status", { enum: ["pending", "in_consideration", "approved", "declined", "in_progress", "completed"] }).default("pending"),
   proofUrl: text("proof_url"),
   approved: boolean("approved").default(false),
   startDate: timestamp("start_date"),

@@ -72,8 +72,34 @@ export async function registerRoutes(
   app.patch(api.tasks.updateStatus.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const { status } = req.body;
-    const task = await storage.updateTaskStatus(Number(req.params.id), status);
-    res.json(task);
+    const taskId = Number(req.params.id);
+    const task = await storage.getTask(taskId);
+    if (!task) return res.sendStatus(404);
+
+    // Only NGO can approve/decline or move to in_consideration
+    // Volunteer can only update to in_progress or completed
+    if (req.user.role === 'volunteer' && !['in_progress', 'completed'].includes(status)) {
+      return res.status(403).json({ message: "Volunteers can only update to in_progress or completed" });
+    }
+
+    const updatedTask = await storage.updateTaskStatus(taskId, status);
+    res.json(updatedTask);
+  });
+
+  app.delete("/api/tasks/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const taskId = Number(req.params.id);
+    const task = await storage.getTask(taskId);
+    if (!task) return res.sendStatus(404);
+
+    // Only the volunteer who applied can opt out
+    if (req.user.role === 'volunteer' && task.volunteerId !== req.user.id) {
+      return res.sendStatus(403);
+    }
+    
+    // NGOs can also remove tasks? Let's assume only volunteer for opt-out as per request
+    await storage.deleteTask(taskId);
+    res.sendStatus(204);
   });
 
   app.post(api.tasks.uploadProof.path, async (req, res) => {
