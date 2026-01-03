@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
@@ -31,8 +31,13 @@ export default function AuthPage() {
   const { loginMutation, registerMutation, user } = useAuth();
   const [, setLocation] = useLocation();
 
+  useEffect(() => {
+    if (user) {
+      setLocation(user.role === 'ngo' ? '/dashboard/ngo' : '/dashboard/volunteer');
+    }
+  }, [user, setLocation]);
+
   if (user) {
-    setLocation(user.role === 'ngo' ? '/dashboard/ngo' : '/dashboard/volunteer');
     return null;
   }
 
