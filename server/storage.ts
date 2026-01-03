@@ -1,5 +1,14 @@
+import { users, causes, tasks, donations, posts, postLikes, postComments, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask, type InsertDonation, type InsertPost, type Donation, type Post, type PostLike, type PostComment, type InsertPostComment, type PostResponse } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, sql, desc } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
+
+const PostgresSessionStore = connectPg(session);
+
 export interface IStorage {
-  sessionStore: any;
+  sessionStore: session.Store;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -29,14 +38,6 @@ export interface IStorage {
   
   getImpactStats(): Promise<any>;
 }
-import { users, causes, tasks, donations, posts, postLikes, postComments, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask, type InsertDonation, type InsertPost, type Donation, type Post, type PostLike, type PostComment, type InsertPostComment, type PostResponse } from "@shared/schema";
-import { db } from "./db";
-import { eq, and, sql, desc } from "drizzle-orm";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
-
-const PostgresSessionStore = connectPg(session);
 
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
