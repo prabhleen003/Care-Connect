@@ -33,18 +33,29 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        return done(null, false);
-      } else {
-        const [salt, key] = user.password.split(":");
-        const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
-
-        if (timingSafeEqual(Buffer.from(key, "hex"), derivedKey)) {
-          return done(null, user);
-        } else {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user) {
+          console.log(`Login failed: user not found - ${username}`);
           return done(null, false);
+        } else {
+          const [salt, key] = user.password.split(":");
+          if (!salt || !key) {
+            console.log(`Login failed: invalid password format for user - ${username}`);
+            return done(null, false);
+          }
+          const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
+
+          if (timingSafeEqual(Buffer.from(key, "hex"), derivedKey)) {
+            return done(null, user);
+          } else {
+            console.log(`Login failed: password mismatch for user - ${username}`);
+            return done(null, false);
+          }
         }
+      } catch (err) {
+        console.error(`Login error for user ${username}:`, err);
+        return done(err);
       }
     }),
   );
