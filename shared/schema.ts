@@ -116,8 +116,53 @@ export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type InsertDonation = z.infer<typeof insertDonationSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 
-// Explicit API types
-export type CauseResponse = Cause & { ngo?: { name: string } };
-export type TaskResponse = Task & { cause?: Cause, volunteer?: { name: string } };
-export type DonationResponse = Donation & { cause?: Cause, volunteer?: { name: string } };
-export type PostResponse = Post & { author?: { name: string, role: string } };
+export const postLikes = pgTable("post_likes", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull(),
+  userId: integer("user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const postComments = pgTable("post_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull(),
+  authorId: integer("author_id").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const postLikesRelations = relations(postLikes, ({ one }) => ({
+  post: one(posts, {
+    fields: [postLikes.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postCommentsRelations = relations(postComments, ({ one }) => ({
+  post: one(posts, {
+    fields: [postComments.postId],
+    references: [posts.id],
+  }),
+  author: one(users, {
+    fields: [postComments.authorId],
+    references: [users.id],
+  }),
+}));
+
+export const insertPostLikeSchema = createInsertSchema(postLikes).omit({ id: true, createdAt: true });
+export const insertPostCommentSchema = createInsertSchema(postComments).omit({ id: true, createdAt: true });
+
+export type PostLike = typeof postLikes.$inferSelect;
+export type PostComment = typeof postComments.$inferSelect;
+
+export type PostResponse = Post & { 
+  author?: { id: number, name: string, role: string },
+  likesCount: number,
+  commentsCount: number,
+  isLiked?: boolean,
+  comments?: (PostComment & { author: { name: string } })[]
+};

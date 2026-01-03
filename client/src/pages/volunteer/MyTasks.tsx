@@ -1,4 +1,5 @@
 import { useVolunteerTasks, useUploadProof, useUpdateTaskStatus, useOptOutTask } from "@/hooks/use-tasks";
+import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

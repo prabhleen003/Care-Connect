@@ -1,5 +1,5 @@
 import { IStorage } from "./storage";
-import { users, causes, tasks, donations, posts, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask, type InsertDonation, type InsertPost, type Donation, type Post } from "@shared/schema";
+import { users, causes, tasks, donations, posts, postLikes, postComments, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask, type InsertDonation, type InsertPost, type Donation, type Post, type PostLike, type PostComment } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import session from "express-session";
