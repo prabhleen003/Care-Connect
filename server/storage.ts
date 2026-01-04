@@ -12,6 +12,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, data: Partial<User>): Promise<User>;
   
   createCause(cause: InsertCause): Promise<Cause>;
   getCauses(filters?: { category?: string; location?: string; urgency?: string }): Promise<Cause[]>;
@@ -64,6 +65,15 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  async updateUser(id: number, data: Partial<User>): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
   }
 
   async createCause(cause: InsertCause): Promise<Cause> {

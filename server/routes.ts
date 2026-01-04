@@ -177,9 +177,15 @@ export async function registerRoutes(
   });
 
   // Impact
-  app.get(api.impact.stats.path, async (req, res) => {
+  app.get("/api/impact/stats", async (req, res) => {
     const stats = await storage.getImpactStats();
     res.json(stats);
+  });
+
+  app.patch("/api/user", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const updated = await storage.updateUser(req.user.id, req.body);
+    res.json(updated);
   });
 
   app.get("/api/ngos", async (req, res) => {

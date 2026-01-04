@@ -10,6 +10,11 @@ export const users = pgTable("users", {
   role: text("role", { enum: ["ngo", "volunteer"] }).notNull(),
   name: text("name").notNull(),
   email: text("email").notNull(),
+  description: text("description"),
+  location: text("location"),
+  website: text("website"),
+  phoneNumber: text("phone_number"),
+  avatarUrl: text("avatar_url"),
 });
 
 export const causes = pgTable("causes", {

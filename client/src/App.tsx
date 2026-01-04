@@ -15,6 +15,7 @@ import Community from "@/pages/Community";
 import DonationInsights from "@/pages/ngo/DonationInsights";
 import NgoList from "@/pages/NgoList";
 import NgoProfile from "@/pages/NgoProfile";
+import Profile from "@/pages/Profile";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -89,6 +90,14 @@ function Router() {
         {() => (
           <Layout title="NGO Profile">
             <NgoProfile />
+          </Layout>
+        )}
+      </Route>
+
+      <Route path="/profile">
+        {() => (
+          <Layout title="My Profile">
+            <Profile />
           </Layout>
         )}
       </Route>
