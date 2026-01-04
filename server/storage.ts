@@ -35,7 +35,8 @@ export interface IStorage {
   getPosts(userId?: number): Promise<PostResponse[]>;
   toggleLike(postId: number, userId: number): Promise<{ liked: boolean }>;
   createComment(comment: InsertPostComment): Promise<PostComment>;
-  
+  getPostsByAuthor(authorId: number, currentUserId?: number): Promise<PostResponse[]>;
+
   getImpactStats(): Promise<any>;
   getNgos(): Promise<User[]>;
 }
@@ -228,6 +229,44 @@ export class DatabaseStorage implements IStorage {
   async createComment(comment: InsertPostComment): Promise<PostComment> {
     const [newComment] = await db.insert(postComments).values(comment).returning();
     return newComment;
+  }
+
+  async getPostsByAuthor(authorId: number, currentUserId?: number): Promise<PostResponse[]> {
+    const authorPosts = await db
+      .select({
+        post: posts,
+        author: users,
+      })
+      .from(posts)
+      .innerJoin(users, eq(posts.authorId, users.id))
+      .where(eq(posts.authorId, authorId))
+      .orderBy(desc(posts.createdAt));
+
+    return await Promise.all(authorPosts.map(async (p) => {
+      const likes = await db.select().from(postLikes).where(eq(postLikes.postId, p.post.id));
+      const comments = await db
+        .select({
+          comment: postComments,
+          author: users,
+        })
+        .from(postComments)
+        .innerJoin(users, eq(postComments.authorId, users.id))
+        .where(eq(postComments.postId, p.post.id));
+
+      const isLiked = currentUserId ? likes.some(l => l.userId === currentUserId) : false;
+
+      return {
+        ...p.post,
+        author: { id: p.author.id, name: p.author.name, role: p.author.role },
+        likesCount: likes.length,
+        commentsCount: comments.length,
+        isLiked,
+        comments: comments.map(c => ({
+          ...c.comment,
+          author: { name: c.author.name }
+        }))
+      };
+    }));
   }
 
   async getTasksByVolunteer(volunteerId: number): Promise<Task[]> {

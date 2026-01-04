@@ -170,6 +170,12 @@ export async function registerRoutes(
     res.json(causes);
   });
 
+  app.get("/api/posts/author/:id", async (req, res) => {
+    const userId = req.isAuthenticated() ? req.user.id : undefined;
+    const posts = await storage.getPostsByAuthor(Number(req.params.id), userId);
+    res.json(posts);
+  });
+
   // Impact
   app.get(api.impact.stats.path, async (req, res) => {
     const stats = await storage.getImpactStats();

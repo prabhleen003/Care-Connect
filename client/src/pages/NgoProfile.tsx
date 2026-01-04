@@ -1,9 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
-import { User, Cause } from "@shared/schema";
+import { User, Cause, PostResponse } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Building2, MapPin, Mail, Heart } from "lucide-react";
+import { Loader2, Building2, MapPin, Mail, Heart, MessageSquare } from "lucide-react";
 import { CauseCard } from "@/components/CauseCard";
+import { PostCard } from "@/components/PostCard";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function NgoProfile() {
   const { id } = useParams();
@@ -19,7 +24,11 @@ export default function NgoProfile() {
     queryKey: [`/api/causes/ngo/${ngoId}`],
   });
 
-  if (isLoadingNgo || isLoadingCauses) {
+  const { data: posts, isLoading: isLoadingPosts } = useQuery<PostResponse[]>({
+    queryKey: [`/api/posts/author/${ngoId}`],
+  });
+
+  if (isLoadingNgo || isLoadingCauses || isLoadingPosts) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -64,6 +73,53 @@ export default function NgoProfile() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Posts Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-secondary">Community Updates</h2>
+            <p className="text-muted-foreground">Recent activities and announcements</p>
+          </div>
+          {posts && posts.length > 0 && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">Show All Posts</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+                <DialogHeader>
+                  <DialogTitle>All Posts from {ngo.name}</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="flex-1 pr-4">
+                  <div className="space-y-6 py-4">
+                    {posts.map((post) => (
+                      <PostCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+
+        {posts && posts.length > 0 ? (
+          <div className="relative">
+            <div className="flex gap-6 overflow-x-auto pb-6 snap-x scrollbar-hide">
+              {posts.slice(0, 10).map((post) => (
+                <div key={post.id} className="min-w-[350px] max-w-[400px] snap-start">
+                  <PostCard post={post} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-muted/20 rounded-xl border-2 border-dashed">
+            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+            <h3 className="text-lg font-medium">No updates yet</h3>
+            <p className="text-muted-foreground">This NGO hasn't posted any updates to the community feed.</p>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-6">
         <div>
