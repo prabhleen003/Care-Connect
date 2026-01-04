@@ -165,6 +165,11 @@ export async function registerRoutes(
     res.status(201).json(post);
   });
 
+  app.get("/api/causes/ngo/:id", async (req, res) => {
+    const causes = await storage.getCausesByNgo(Number(req.params.id));
+    res.json(causes);
+  });
+
   // Impact
   app.get(api.impact.stats.path, async (req, res) => {
     const stats = await storage.getImpactStats();
