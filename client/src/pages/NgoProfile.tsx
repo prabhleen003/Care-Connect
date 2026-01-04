@@ -3,7 +3,7 @@ import { useParams } from "wouter";
 import { User, Cause } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Building2, MapPin, Mail, Heart } from "lucide-react";
-import CauseCard from "@/components/CauseCard";
+import { CauseCard } from "@/components/CauseCard";
 
 export default function NgoProfile() {
   const { id } = useParams();
