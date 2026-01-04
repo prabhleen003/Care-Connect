@@ -105,7 +105,7 @@ export default function NgoProfile() {
         {posts && posts.length > 0 ? (
           <div className="relative">
             <div className="flex gap-6 overflow-x-auto pb-6 snap-x scrollbar-hide">
-              {posts.slice(0, 10).map((post) => (
+              {posts.slice(0, 3).map((post) => (
                 <div key={post.id} className="min-w-[350px] max-w-[400px] snap-start">
                   <PostCard post={post} />
                 </div>
