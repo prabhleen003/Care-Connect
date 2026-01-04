@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User as UserIcon, MapPin, Globe, Phone, Mail, Edit3 } from "lucide-react";
+import { Loader2, User as UserIcon, MapPin, Globe, Phone, Mail, Edit3, Camera, X } from "lucide-react";
 import { useState } from "react";
 
 export default function Profile() {
@@ -26,6 +27,7 @@ export default function Profile() {
       location: user?.location || "",
       website: user?.website || "",
       phoneNumber: user?.phoneNumber || "",
+      avatarUrl: user?.avatarUrl || "",
     },
   });
 
@@ -53,9 +55,14 @@ export default function Profile() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
-            <UserIcon className="h-10 w-10 text-primary" />
+        <div className="flex items-center gap-6">
+          <div className="relative group">
+            <Avatar className="h-24 w-24 border-2 border-primary/20">
+              <AvatarImage src={user.avatarUrl || undefined} />
+              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                {user.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
           </div>
           <div>
             <h1 className="text-3xl font-bold text-secondary">{user.name}</h1>
@@ -74,11 +81,46 @@ export default function Profile() {
         <Card className="border-primary/20 shadow-md">
           <CardHeader>
             <CardTitle>Edit Your Details</CardTitle>
-            <CardDescription>Add in-depth information about yourself or your organization</CardDescription>
+            <CardDescription>Update your profile information and avatar</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))} className="space-y-6">
+                <div className="flex flex-col items-center gap-4 mb-6">
+                  <Avatar className="h-24 w-24 border-2 border-primary/20">
+                    <AvatarImage src={form.watch("avatarUrl") || undefined} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                      {user.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex gap-2">
+                    <FormField
+                      control={form.control}
+                      name="avatarUrl"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Input {...field} placeholder="Avatar URL (e.g. from Unsplash)" className="w-full max-w-xs" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {form.watch("avatarUrl") && (
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => form.setValue("avatarUrl", "")}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Enter a public image URL for your profile picture</p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
