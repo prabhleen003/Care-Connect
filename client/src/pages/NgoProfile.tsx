@@ -4,7 +4,7 @@ import { User, Cause, PostResponse } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Building2, MapPin, Mail, Heart, MessageSquare } from "lucide-react";
 import { CauseCard } from "@/components/CauseCard";
-import { PostCard } from "@/components/PostCard";
+import { PostCard } from "../components/PostCard";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
