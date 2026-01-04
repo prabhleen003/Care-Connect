@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, MapPin, Loader2, Building2 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 
 export default function NgoList() {
   const [search, setSearch] = useState("");
@@ -38,24 +39,26 @@ export default function NgoList() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredNgos?.map((ngo) => (
-          <Card key={ngo.id} className="hover-elevate transition-all" data-testid={`card-ngo-${ngo.id}`}>
-            <CardHeader className="flex flex-row items-center gap-4 pb-2">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <CardTitle className="text-lg">{ngo.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                <Building2 className="h-4 w-4 mt-0.5 shrink-0" />
-                <p>Dedicated to community service and social impact. Connecting volunteers with meaningful causes.</p>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-primary font-medium">
-                <MapPin className="h-4 w-4 shrink-0" />
-                <span>Global Support Network</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Link key={ngo.id} href={`/ngo/${ngo.id}`}>
+            <Card className="hover-elevate transition-all cursor-pointer h-full" data-testid={`card-ngo-${ngo.id}`}>
+              <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-5 w-5 text-primary" />
+                </div>
+                <CardTitle className="text-lg">{ngo.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Building2 className="h-4 w-4 mt-0.5 shrink-0" />
+                  <p>Dedicated to community service and social impact. Connecting volunteers with meaningful causes.</p>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-primary font-medium">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span>Global Support Network</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
