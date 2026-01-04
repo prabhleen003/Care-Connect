@@ -86,17 +86,17 @@ export default function NgoProfile() {
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">Show All Posts</Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-                <DialogHeader>
+              <DialogContent className="max-w-2xl h-[80vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-0">
                   <DialogTitle>All Posts from {ngo.name}</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="flex-1 pr-4">
-                  <div className="space-y-6 py-4">
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="space-y-6">
                     {posts.map((post) => (
                       <PostCard key={post.id} post={post} />
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               </DialogContent>
             </Dialog>
           )}
