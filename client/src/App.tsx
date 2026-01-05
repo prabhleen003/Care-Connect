@@ -17,9 +17,10 @@ import NgoList from "@/pages/NgoList";
 import NgoProfile from "@/pages/NgoProfile";
 import Profile from "@/pages/Profile";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, Heart } from "lucide-react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Loader2 } from "lucide-react";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Navbar } from "@/components/Navbar";
 
 // Protected Route Wrapper
 function ProtectedRoute({ 
@@ -51,123 +52,122 @@ function ProtectedRoute({
   return <Component />;
 }
 
-function Layout({ children, title }: { children: React.ReactNode, title: string }) {
+function Router() {
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full">
         <AppSidebar />
-        <main className="flex-1 overflow-auto bg-muted/20">
-          <header className="p-4 border-b bg-background flex items-center gap-4">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center">
-                <Heart className="h-5 w-5 text-white" />
-              </div>
-              <span className="font-bold text-xl tracking-tight text-primary">CareConnect</span>
-            </div>
-            <div className="ml-4 h-6 w-px bg-border" />
-            <h1 className="text-xl font-bold">{title}</h1>
+        <main className="flex-1 overflow-auto bg-muted/20 flex flex-col">
+          <header className="flex-none">
+            <Navbar />
           </header>
-          {children}
+          <div className="flex-1">
+            <Switch>
+              <Route path="/" component={Landing} />
+              <Route path="/login" component={AuthPage} />
+              <Route path="/register" component={AuthPage} />
+              
+              {/* Public cause details */}
+              <Route path="/cause/:id" component={CauseDetails} />
+
+              <Route path="/ngos">
+                {() => (
+                  <Layout title="Registered NGOs">
+                    <ProtectedRoute component={NgoList} allowedRole="ngo" />
+                  </Layout>
+                )}
+              </Route>
+
+              <Route path="/ngo/:id">
+                {() => (
+                  <Layout title="NGO Profile">
+                    <NgoProfile />
+                  </Layout>
+                )}
+              </Route>
+
+              <Route path="/profile">
+                {() => (
+                  <Layout title="My Profile">
+                    <Profile />
+                  </Layout>
+                )}
+              </Route>
+
+              <Route path="/volunteer/ngos">
+                {() => (
+                  <Layout title="Partner NGOs">
+                    <ProtectedRoute component={NgoList} allowedRole="volunteer" />
+                  </Layout>
+                )}
+              </Route>
+
+              {/* Community Feed */}
+              <Route path="/community">
+                {() => (
+                  <Layout title="Community Feed">
+                    <Community />
+                  </Layout>
+                )}
+              </Route>
+
+              {/* Protected NGO Routes */}
+              <Route path="/dashboard/ngo">
+                {() => (
+                  <Layout title="NGO Dashboard">
+                    <ProtectedRoute component={NgoDashboard} allowedRole="ngo" />
+                  </Layout>
+                )}
+              </Route>
+              <Route path="/dashboard/ngo/causes">
+                {() => (
+                  <Layout title="My Causes">
+                    <ProtectedRoute component={NgoDashboard} allowedRole="ngo" />
+                  </Layout>
+                )}
+              </Route>
+
+              {/* Protected Volunteer Routes */}
+              <Route path="/dashboard/volunteer">
+                {() => (
+                  <Layout title="Volunteer Dashboard">
+                    <ProtectedRoute component={VolunteerDashboard} allowedRole="volunteer" />
+                  </Layout>
+                )}
+              </Route>
+              <Route path="/dashboard/volunteer/tasks">
+                {() => (
+                  <Layout title="My Tasks">
+                    <ProtectedRoute component={MyTasks} allowedRole="volunteer" />
+                  </Layout>
+                )}
+              </Route>
+
+              <Route path="/dashboard/ngo/donations">
+                {() => (
+                  <Layout title="Donation Insights">
+                    <ProtectedRoute component={DonationInsights} allowedRole="ngo" />
+                  </Layout>
+                )}
+              </Route>
+
+              <Route component={NotFound} />
+            </Switch>
+          </div>
         </main>
       </div>
     </SidebarProvider>
   );
 }
 
-function Router() {
+function Layout({ children, title }: { children: React.ReactNode, title: string }) {
   return (
-    <Switch>
-      <Route path="/" component={Landing} />
-      <Route path="/login" component={AuthPage} />
-      <Route path="/register" component={AuthPage} />
-      
-      {/* Public cause details */}
-      <Route path="/cause/:id" component={CauseDetails} />
-
-      <Route path="/ngos">
-        {() => (
-          <Layout title="Registered NGOs">
-            <ProtectedRoute component={NgoList} allowedRole="ngo" />
-          </Layout>
-        )}
-      </Route>
-
-      <Route path="/ngo/:id">
-        {() => (
-          <Layout title="NGO Profile">
-            <NgoProfile />
-          </Layout>
-        )}
-      </Route>
-
-      <Route path="/profile">
-        {() => (
-          <Layout title="My Profile">
-            <Profile />
-          </Layout>
-        )}
-      </Route>
-
-      <Route path="/volunteer/ngos">
-        {() => (
-          <Layout title="Partner NGOs">
-            <ProtectedRoute component={NgoList} allowedRole="volunteer" />
-          </Layout>
-        )}
-      </Route>
-
-      {/* Community Feed */}
-      <Route path="/community">
-        {() => (
-          <Layout title="Community Feed">
-            <Community />
-          </Layout>
-        )}
-      </Route>
-
-      {/* Protected NGO Routes */}
-      <Route path="/dashboard/ngo">
-        {() => (
-          <Layout title="NGO Dashboard">
-            <ProtectedRoute component={NgoDashboard} allowedRole="ngo" />
-          </Layout>
-        )}
-      </Route>
-      <Route path="/dashboard/ngo/causes">
-        {() => (
-          <Layout title="My Causes">
-            <ProtectedRoute component={NgoDashboard} allowedRole="ngo" />
-          </Layout>
-        )}
-      </Route>
-
-      {/* Protected Volunteer Routes */}
-      <Route path="/dashboard/volunteer">
-        {() => (
-          <Layout title="Volunteer Dashboard">
-            <ProtectedRoute component={VolunteerDashboard} allowedRole="volunteer" />
-          </Layout>
-        )}
-      </Route>
-      <Route path="/dashboard/volunteer/tasks">
-        {() => (
-          <Layout title="My Tasks">
-            <ProtectedRoute component={MyTasks} allowedRole="volunteer" />
-          </Layout>
-        )}
-      </Route>
-
-      <Route path="/dashboard/ngo/donations">
-        {() => (
-          <Layout title="Donation Insights">
-            <ProtectedRoute component={DonationInsights} allowedRole="ngo" />
-          </Layout>
-        )}
-      </Route>
-
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex flex-col h-full">
+      <header className="p-4 border-b bg-background">
+        <h1 className="text-xl font-bold">{title}</h1>
+      </header>
+      {children}
+    </div>
   );
 }
 

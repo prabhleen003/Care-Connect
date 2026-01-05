@@ -11,6 +11,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HeartHandshake, LogOut, LayoutDashboard, Search, ListTodo, UserCircle } from "lucide-react";
 
+import { SidebarTrigger } from "@/components/ui/sidebar";
+
 export function Navbar() {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
@@ -22,7 +24,9 @@ export function Navbar() {
 
   return (
     <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
+        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        
         <Link href="/" className="flex items-center gap-2 group cursor-pointer">
           <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
             <HeartHandshake className="h-6 w-6 text-primary" />
@@ -32,7 +36,7 @@ export function Navbar() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex-1 flex items-center justify-end gap-4">
           {user ? (
             <>
               {/* Role-based Navigation Links */}
