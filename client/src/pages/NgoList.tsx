@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, MapPin, Loader2, Building2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
@@ -40,21 +41,32 @@ export default function NgoList() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredNgos?.map((ngo) => (
           <Link key={ngo.id} href={`/ngo/${ngo.id}`}>
-            <Card className="hover-elevate transition-all cursor-pointer h-full" data-testid={`card-ngo-${ngo.id}`}>
-              <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Building2 className="h-5 w-5 text-primary" />
-                </div>
-                <CardTitle className="text-lg">{ngo.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <Building2 className="h-4 w-4 mt-0.5 shrink-0" />
-                  <p>Dedicated to community service and social impact. Connecting volunteers with meaningful causes.</p>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-primary font-medium">
-                  <MapPin className="h-4 w-4 shrink-0" />
-                  <span>Global Support Network</span>
+            <Card className="hover-elevate transition-all cursor-pointer h-full overflow-hidden border-none shadow-sm" data-testid={`card-ngo-${ngo.id}`}>
+              <div className="relative h-24 bg-muted">
+                {ngo.bannerUrl ? (
+                  <img src={ngo.bannerUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-r from-primary/10 to-primary/5" />
+                )}
+              </div>
+              <CardContent className="relative pt-12 pb-6">
+                <Avatar className="absolute -top-10 left-6 h-20 w-20 border-4 border-background shadow-sm">
+                  <AvatarImage src={ngo.avatarUrl || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold uppercase">
+                    {ngo.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-secondary truncate">{ngo.name}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                      {ngo.headline || (ngo.description?.substring(0, 100) + '...') || 'Dedicated to community service and social impact.'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-primary font-medium">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{ngo.location || 'Global Support Network'}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>

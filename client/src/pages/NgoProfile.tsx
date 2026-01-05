@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { User, Cause, PostResponse } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Building2, MapPin, Mail, Heart, MessageSquare } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2, Building2, MapPin, Mail, Heart, MessageSquare, Globe, CheckCircle2 } from "lucide-react";
 import { CauseCard } from "@/components/CauseCard";
 import { PostCard } from "../components/PostCard";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function NgoProfile() {
   const { id } = useParams();
@@ -45,37 +45,62 @@ export default function NgoProfile() {
   }
 
   return (
-    <div className="p-6 space-y-8 max-w-7xl mx-auto">
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader className="flex flex-row items-center gap-6">
-          <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shadow-sm">
-            <Building2 className="h-10 w-10 text-primary" />
+    <div className="max-w-5xl mx-auto pb-12">
+      <Card className="overflow-hidden border-none shadow-sm rounded-lg bg-background">
+        {/* Banner Section */}
+        <div className="relative h-48 md:h-64 bg-muted">
+          {ngo.bannerUrl ? (
+            <img 
+              src={ngo.bannerUrl} 
+              alt={`${ngo.name} Banner`} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-primary/10 to-primary/5" />
+          )}
+        </div>
+
+        <CardContent className="relative px-6 pb-6">
+          {/* Avatar Section */}
+          <div className="relative -mt-16 mb-4 inline-block">
+            <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-md">
+              <AvatarImage src={ngo.avatarUrl || undefined} />
+              <AvatarFallback className="bg-primary/10 text-primary text-4xl font-bold uppercase">
+                {ngo.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
           </div>
-          <div className="space-y-1">
-            <CardTitle className="text-3xl text-secondary">{ngo.name}</CardTitle>
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground pt-1">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="h-4 w-4" />
-                <span>Global Support Network</span>
+
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-secondary">{ngo.name}</h1>
+                <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
               </div>
-              <div className="flex items-center gap-1.5">
-                <Mail className="h-4 w-4" />
-                <span>{ngo.email}</span>
+              <p className="text-lg text-secondary/80">
+                {ngo.headline || 'Non-Profit Organization'}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" /> {ngo.location || 'Global Support Network'}
+                </span>
+                {ngo.website && (
+                  <a href={ngo.website} target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">
+                    Visit Our Website
+                  </a>
+                )}
+                <div className="flex items-center gap-1">
+                  <Mail className="h-4 w-4" />
+                  <span>{ngo.email}</span>
+                </div>
               </div>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-secondary/80 leading-relaxed max-w-3xl">
-            Dedicated to community service and social impact. This NGO works tirelessly to connect 
-            volunteers with meaningful causes that drive real change in the community. Through 
-            collaboration and passion, we aim to build a better future for everyone.
-          </p>
         </CardContent>
       </Card>
 
       {/* Posts Section */}
-      <div className="space-y-6">
+      <div className="mt-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-secondary">Community Updates</h2>
@@ -121,25 +146,38 @@ export default function NgoProfile() {
         )}
       </div>
 
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-secondary">Active Causes</h2>
-          <p className="text-muted-foreground">Opportunities to make a difference</p>
-        </div>
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
+          <Card className="border-none shadow-sm">
+            <CardContent className="pt-6">
+              <h3 className="text-xl font-bold text-secondary mb-4">About Us</h3>
+              <p className="text-secondary/80 leading-relaxed whitespace-pre-wrap">
+                {ngo.description || "Dedicated to community service and social impact. This NGO works tirelessly to connect volunteers with meaningful causes that drive real change in the community."}
+              </p>
+            </CardContent>
+          </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {causes?.map((cause) => (
-            <CauseCard key={cause.id} cause={cause} />
-          ))}
-        </div>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-secondary">Active Causes</h2>
+              <p className="text-muted-foreground">Opportunities to make a difference</p>
+            </div>
 
-        {causes?.length === 0 && (
-          <div className="text-center py-12 bg-muted/20 rounded-xl border-2 border-dashed">
-            <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-            <h3 className="text-lg font-medium">No active causes</h3>
-            <p className="text-muted-foreground">This NGO doesn't have any open causes at the moment.</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {causes?.map((cause) => (
+                <CauseCard key={cause.id} cause={cause} />
+              ))}
+            </div>
+
+            {causes?.length === 0 && (
+              <div className="text-center py-12 bg-muted/20 rounded-xl border-2 border-dashed">
+                <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <h3 className="text-lg font-medium">No active causes</h3>
+                <p className="text-muted-foreground">This NGO doesn't have any open causes at the moment.</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
