@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { HeartHandshake, LogOut, LayoutDashboard, Search, ListTodo } from "lucide-react";
+import { HeartHandshake, LogOut, LayoutDashboard, Search, ListTodo, UserCircle } from "lucide-react";
 
 export function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -62,7 +62,7 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border-2 border-primary/10">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt={user.name} />
+                      <AvatarImage src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt={user.name} />
                       <AvatarFallback className="bg-primary/5 text-primary font-bold">
                         {user.name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
@@ -80,6 +80,11 @@ export function Navbar() {
                   <DropdownMenuItem onClick={() => window.location.href = user.role === 'ngo' ? '/dashboard/ngo' : '/dashboard/volunteer'}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => window.location.href = "/profile"}>
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
