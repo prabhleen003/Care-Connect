@@ -30,7 +30,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4 border-b">
+      <SidebarHeader className="p-4 border-b hidden">
         <Link href="/" className="flex items-center gap-2 px-2">
           <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center">
             <Heart className="h-5 w-5 text-white" />

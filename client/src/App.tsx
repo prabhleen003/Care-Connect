@@ -17,7 +17,7 @@ import NgoList from "@/pages/NgoList";
 import NgoProfile from "@/pages/NgoProfile";
 import Profile from "@/pages/Profile";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, Heart } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 
@@ -57,10 +57,17 @@ function Layout({ children, title }: { children: React.ReactNode, title: string 
       <div className="flex h-screen w-full">
         <AppSidebar />
         <main className="flex-1 overflow-auto bg-muted/20">
-          <div className="p-4 border-b bg-background flex items-center gap-4">
+          <header className="p-4 border-b bg-background flex items-center gap-4">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center">
+                <Heart className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-bold text-xl tracking-tight text-primary">CareConnect</span>
+            </div>
+            <div className="ml-4 h-6 w-px bg-border" />
             <h1 className="text-xl font-bold">{title}</h1>
-          </div>
+          </header>
           {children}
         </main>
       </div>
