@@ -1,17 +1,16 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema, User } from "@shared/schema";
+import { User } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User as UserIcon, MapPin, Globe, Phone, Mail, Edit3, Camera, X } from "lucide-react";
+import { Loader2, MapPin, Globe, Phone, Mail, Edit3, Camera, X, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 export default function Profile() {
@@ -23,11 +22,13 @@ export default function Profile() {
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
+      headline: user?.headline || "",
       description: user?.description || "",
       location: user?.location || "",
       website: user?.website || "",
       phoneNumber: user?.phoneNumber || "",
       avatarUrl: user?.avatarUrl || "",
+      bannerUrl: user?.bannerUrl || "",
     },
   });
 
@@ -53,97 +54,127 @@ export default function Profile() {
   if (!user) return null;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <div className="relative group">
-            <Avatar className="h-24 w-24 border-2 border-primary/20">
+    <div className="max-w-5xl mx-auto pb-12">
+      <Card className="overflow-hidden border-none shadow-sm rounded-lg bg-background">
+        {/* Banner Section */}
+        <div className="relative h-48 md:h-64 bg-muted group">
+          {user.bannerUrl ? (
+            <img 
+              src={user.bannerUrl} 
+              alt="Profile Banner" 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-primary/10 to-primary/5" />
+          )}
+          {isEditing && (
+            <div className="absolute top-4 right-4">
+              <Button 
+                variant="secondary" 
+                size="icon" 
+                className="rounded-full shadow-lg"
+                onClick={() => {
+                  const url = prompt("Enter banner image URL:");
+                  if (url !== null) form.setValue("bannerUrl", url);
+                }}
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <CardContent className="relative px-6 pb-6">
+          {/* Avatar Section */}
+          <div className="relative -mt-16 mb-4 inline-block group">
+            <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-md">
               <AvatarImage src={user.avatarUrl || undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                {user.name.charAt(0).toUpperCase()}
+              <AvatarFallback className="bg-primary/10 text-primary text-4xl font-bold uppercase">
+                {user.name.charAt(0)}
               </AvatarFallback>
             </Avatar>
+            {isEditing && (
+              <Button 
+                variant="secondary" 
+                size="icon" 
+                className="absolute bottom-2 right-2 rounded-full shadow-lg border-2 border-background"
+                onClick={() => {
+                  const url = prompt("Enter profile image URL:");
+                  if (url !== null) form.setValue("avatarUrl", url);
+                }}
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+            )}
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-secondary">{user.name}</h1>
-            <p className="text-muted-foreground capitalize">{user.role} Account</p>
-          </div>
-        </div>
-        {!isEditing && (
-          <Button onClick={() => setIsEditing(true)} className="gap-2">
-            <Edit3 className="h-4 w-4" />
-            Edit Profile
-          </Button>
-        )}
-      </div>
 
-      {isEditing ? (
-        <Card className="border-primary/20 shadow-md">
-          <CardHeader>
-            <CardTitle>Edit Your Details</CardTitle>
-            <CardDescription>Update your profile information and avatar</CardDescription>
-          </CardHeader>
-          <CardContent>
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-secondary">{user.name}</h1>
+                <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <p className="text-lg text-secondary/80">
+                {user.headline || (user.role === 'ngo' ? 'Non-Profit Organization' : 'Community Volunteer')}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                {user.location && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" /> {user.location}
+                  </span>
+                )}
+                {user.website && (
+                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">
+                    Visit My Website
+                  </a>
+                )}
+              </div>
+              <p className="text-sm font-medium text-primary hover:underline cursor-pointer">
+                500+ connections
+              </p>
+            </div>
+
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)} variant="outline" size="icon" className="rounded-full border-secondary/20">
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button onClick={form.handleSubmit((data) => updateProfileMutation.mutate(data))} disabled={updateProfileMutation.isPending}>
+                  {updateProfileMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Save
+                </Button>
+                <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {isEditing && (
+        <Card className="mt-6 border-none shadow-sm">
+          <CardContent className="pt-6">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))} className="space-y-6">
-                <div className="flex flex-col items-center gap-4 mb-6">
-                  <Avatar className="h-24 w-24 border-2 border-primary/20">
-                    <AvatarImage src={form.watch("avatarUrl") || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                      {user.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex gap-2">
-                    <FormField
-                      control={form.control}
-                      name="avatarUrl"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormControl>
-                            <Input {...field} placeholder="Avatar URL (e.g. from Unsplash)" className="w-full max-w-xs" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {form.watch("avatarUrl") && (
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => form.setValue("avatarUrl", "")}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Enter a public image URL for your profile picture</p>
-                </div>
-
+              <form className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
+                        <CustomFormLabel>Full Name</CustomFormLabel>
+                        <FormControl><Input {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="headline"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
+                        <CustomFormLabel>Headline</CustomFormLabel>
+                        <FormControl><Input {...field} placeholder="e.g. Student at University, Program Manager..." /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -153,13 +184,8 @@ export default function Profile() {
                     name="location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input {...field} className="pl-9" placeholder="City, Country" />
-                          </div>
-                        </FormControl>
+                        <CustomFormLabel>Location</CustomFormLabel>
+                        <FormControl><Input {...field} placeholder="City, State, Country" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -169,29 +195,8 @@ export default function Profile() {
                     name="website"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Website</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Globe className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input {...field} className="pl-9" placeholder="https://..." />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phoneNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input {...field} className="pl-9" />
-                          </div>
-                        </FormControl>
+                        <CustomFormLabel>Website</CustomFormLabel>
+                        <FormControl><Input {...field} placeholder="https://..." /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -202,81 +207,52 @@ export default function Profile() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>About / Description</FormLabel>
+                      <CustomFormLabel>About</CustomFormLabel>
                       <FormControl>
-                        <Textarea 
-                          {...field} 
-                          className="min-h-[150px] resize-none" 
-                          placeholder="Tell the community more about your mission and work..."
-                        />
+                        <Textarea {...field} className="min-h-[120px] resize-none" placeholder="Share your story..." />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <div className="flex gap-4">
-                  <Button type="submit" className="flex-1" disabled={updateProfileMutation.isPending}>
-                    {updateProfileMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    Save Changes
-                  </Button>
-                  <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditing(false)}>
-                    Cancel
-                  </Button>
-                </div>
               </form>
             </Form>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-6">
-            <Card className="border-none bg-muted/30">
-              <CardHeader>
-                <CardTitle className="text-xl">About</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-secondary leading-relaxed whitespace-pre-wrap">
-                  {user.description || "No description provided yet. Click 'Edit Profile' to add one!"}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+      )}
 
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl">Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+      {!isEditing && (
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="md:col-span-2 border-none shadow-sm">
+            <CardContent className="pt-6">
+              <h3 className="text-xl font-bold text-secondary mb-4">About</h3>
+              <p className="text-secondary/80 leading-relaxed whitespace-pre-wrap">
+                {user.description || "No description provided yet."}
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-none shadow-sm">
+            <CardContent className="pt-6 space-y-4">
+              <h3 className="text-xl font-bold text-secondary mb-2">Contact Info</h3>
+              <div className="flex items-center gap-3 text-sm">
+                <Mail className="h-4 w-4 text-primary" />
+                <span className="truncate">{user.email}</span>
+              </div>
+              {user.phoneNumber && (
                 <div className="flex items-center gap-3 text-sm">
-                  <Mail className="h-4 w-4 text-primary shrink-0" />
-                  <span className="truncate">{user.email}</span>
+                  <Phone className="h-4 w-4 text-primary" />
+                  <span>{user.phoneNumber}</span>
                 </div>
-                {user.location && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <MapPin className="h-4 w-4 text-primary shrink-0" />
-                    <span>{user.location}</span>
-                  </div>
-                )}
-                {user.website && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Globe className="h-4 w-4 text-primary shrink-0" />
-                    <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
-                      {user.website}
-                    </a>
-                  </div>
-                )}
-                {user.phoneNumber && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone className="h-4 w-4 text-primary shrink-0" />
-                    <span>{user.phoneNumber}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
   );
+}
+
+function CustomFormLabel({ children }: { children: React.ReactNode }) {
+  return <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{children}</label>;
 }

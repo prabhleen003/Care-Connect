@@ -15,6 +15,8 @@ export const users = pgTable("users", {
   website: text("website"),
   phoneNumber: text("phone_number"),
   avatarUrl: text("avatar_url"),
+  bannerUrl: text("banner_url"),
+  headline: text("headline"),
 });
 
 export const causes = pgTable("causes", {
