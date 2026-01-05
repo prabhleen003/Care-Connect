@@ -57,9 +57,12 @@ function Router() {
     <Switch>
       <Route path="/">
         {() => (
-          <Layout title="Welcome">
-            <Landing />
-          </Layout>
+          <div className="flex flex-col min-h-screen">
+            <Navbar />
+            <main className="flex-1">
+              <Landing />
+            </main>
+          </div>
         )}
       </Route>
       <Route path="/login" component={AuthPage} />
@@ -159,9 +162,7 @@ function Layout({ children, title }: { children: React.ReactNode, title: string 
     <div className="flex h-screen w-full">
       <AppSidebar />
       <main className="flex-1 overflow-auto bg-muted/20 flex flex-col">
-        <header className="flex-none">
-          <Navbar title={title} />
-        </header>
+        <Navbar title={title} />
         <div className="flex-1">
           {children}
         </div>
