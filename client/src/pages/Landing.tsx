@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { useImpactStats } from "@/hooks/use-impact";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
@@ -7,6 +7,7 @@ import { ArrowRight, Users, Heart, Globe, CheckCircle } from "lucide-react";
 
 export default function Landing() {
   const { data: stats } = useImpactStats();
+  const [, setLocation] = useLocation();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -48,17 +49,22 @@ export default function Landing() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-4 justify-center pt-4"
             >
-              <Link href="/register">
-                <Button size="xl" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/25 bg-primary hover:bg-primary/90">
-                  Get Started Now
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button size="xl" variant="outline" className="h-14 px-8 text-lg rounded-full border-2">
-                  I'm an Organization
-                </Button>
-              </Link>
+              <Button 
+                size="xl" 
+                className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/25 bg-primary hover:bg-primary/90"
+                onClick={() => setLocation("/register?role=volunteer")}
+              >
+                Get Started Now
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button 
+                size="xl" 
+                variant="outline" 
+                className="h-14 px-8 text-lg rounded-full border-2"
+                onClick={() => setLocation("/register?role=ngo")}
+              >
+                I'm an Organisation
+              </Button>
             </motion.div>
           </div>
         </div>

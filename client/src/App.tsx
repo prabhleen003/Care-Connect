@@ -21,6 +21,7 @@ import { Loader2 } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Navbar } from "@/components/Navbar";
+import { useLocation } from "wouter";
 
 // Protected Route Wrapper
 function ProtectedRoute({ 
@@ -53,17 +54,30 @@ function ProtectedRoute({
 }
 
 function Router() {
+  const { user } = useAuth();
+  const [location] = useLocation();
+
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full">
-        <AppSidebar />
+        {/* Only show sidebar if user is logged in and not on landing page */}
+        {user && location !== "/" && <AppSidebar />}
         <main className="flex-1 overflow-auto bg-muted/20 flex flex-col">
           <header className="flex-none">
             <Navbar />
           </header>
           <div className="flex-1">
             <Switch>
-              <Route path="/" component={Landing} />
+              <Route path="/">
+                {() => {
+                  if (user) {
+                    const dashboardPath = user.role === "ngo" ? "/dashboard/ngo" : "/dashboard/volunteer";
+                    window.location.replace(dashboardPath);
+                    return null;
+                  }
+                  return <Landing />;
+                }}
+              </Route>
               <Route path="/login" component={AuthPage} />
               <Route path="/register" component={AuthPage} />
               

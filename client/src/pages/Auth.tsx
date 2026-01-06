@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
 import { insertUserSchema, InsertUser } from "@shared/schema";
-import { useLocation, Link } from "wouter";
+import { useLocation, Link, useSearch } from "wouter";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,9 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const { loginMutation, registerMutation, user } = useAuth();
   const [, setLocation] = useLocation();
+  const [search] = useSearch();
+  const searchParams = new URLSearchParams(search);
+  const initialRole = searchParams.get("role") as "ngo" | "volunteer" | null;
 
   useEffect(() => {
     if (user) {
@@ -80,7 +83,7 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
-                  <RegisterForm />
+                  <RegisterForm initialRole={initialRole} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -158,7 +161,7 @@ function LoginForm() {
   );
 }
 
-function RegisterForm() {
+function RegisterForm({ initialRole }: { initialRole?: "ngo" | "volunteer" | null }) {
   const { registerMutation } = useAuth();
   
   const form = useForm<InsertUser>({
@@ -168,7 +171,7 @@ function RegisterForm() {
       password: "",
       name: "",
       email: "",
-      role: "volunteer",
+      role: initialRole || "volunteer",
     },
   });
 
