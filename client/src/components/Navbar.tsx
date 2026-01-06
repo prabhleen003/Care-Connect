@@ -13,7 +13,7 @@ import { HeartHandshake, LogOut, LayoutDashboard, Search, ListTodo, UserCircle }
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
-export function Navbar({ title }: { title?: string }) {
+export function Navbar() {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
 
@@ -22,32 +22,46 @@ export function Navbar({ title }: { title?: string }) {
     window.location.href = "/";
   };
 
-  if (location === "/" || !user) {
-    return (
-      <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 group cursor-pointer">
-            <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
-              <HeartHandshake className="h-6 w-6 text-primary" />
-            </div>
-            <span className="font-display font-bold text-xl tracking-tight text-foreground">
-              Care<span className="text-primary">Connect</span>
-            </span>
-          </Link>
+  return (
+    <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
+        <SidebarTrigger data-testid="button-sidebar-toggle" />
+        
+        <Link href="/" className="flex items-center gap-2 group cursor-pointer">
+          <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
+            <HeartHandshake className="h-6 w-6 text-primary" />
+          </div>
+          <span className="font-display font-bold text-xl tracking-tight text-foreground">
+            Care<span className="text-primary">Connect</span>
+          </span>
+        </Link>
 
-          <div className="flex-1 flex items-center justify-end gap-4">
-            {!user ? (
-              <div className="flex items-center gap-3">
-                <Link href="/login">
-                  <Button variant="ghost" className="font-medium">Sign In</Button>
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
-                    Get Started
-                  </Button>
-                </Link>
+        <div className="flex-1 flex items-center justify-end gap-4">
+          {user ? (
+            <>
+              {/* Role-based Navigation Links */}
+              <div className="hidden md:flex items-center gap-6 mr-4">
+                {user.role === "ngo" ? (
+                  <>
+                    <Link href="/dashboard/ngo" className={`text-sm font-medium hover:text-primary transition-colors ${location === '/dashboard/ngo' ? 'text-primary' : 'text-muted-foreground'}`}>
+                      Overview
+                    </Link>
+                    <Link href="/dashboard/ngo/causes" className={`text-sm font-medium hover:text-primary transition-colors ${location === '/dashboard/ngo/causes' ? 'text-primary' : 'text-muted-foreground'}`}>
+                      My Causes
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/dashboard/volunteer" className={`text-sm font-medium hover:text-primary transition-colors ${location === '/dashboard/volunteer' ? 'text-primary' : 'text-muted-foreground'}`}>
+                      Find Causes
+                    </Link>
+                    <Link href="/dashboard/volunteer/tasks" className={`text-sm font-medium hover:text-primary transition-colors ${location === '/dashboard/volunteer/tasks' ? 'text-primary' : 'text-muted-foreground'}`}>
+                      My Tasks
+                    </Link>
+                  </>
+                )}
               </div>
-            ) : (
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -83,18 +97,21 @@ export function Navbar({ title }: { title?: string }) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link href="/login">
+                <Button variant="ghost" className="font-medium">Sign In</Button>
+              </Link>
+              <Link href="/register">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
-      </nav>
-    );
-  }
-
-  return (
-    <div className="flex items-center h-16 px-4 bg-background/50 backdrop-blur-sm border-b sticky top-0 z-50">
-      <SidebarTrigger data-testid="button-sidebar-toggle" />
-      <div className="h-6 w-px bg-border mx-4" />
-      <h1 className="text-lg font-bold text-foreground truncate">{title || "CareConnect"}</h1>
-    </div>
+      </div>
+    </nav>
   );
 }

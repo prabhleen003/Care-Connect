@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { useImpactStats } from "@/hooks/use-impact";
 import { Button } from "@/components/ui/button";
+import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { ArrowRight, Users, Heart, Globe, CheckCircle } from "lucide-react";
 
@@ -9,6 +10,8 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 overflow-hidden">
         {/* Abstract background blobs */}
@@ -46,13 +49,13 @@ export default function Landing() {
               className="flex flex-col sm:flex-row gap-4 justify-center pt-4"
             >
               <Link href="/register">
-                <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/25 bg-primary hover:bg-primary/90">
+                <Button size="xl" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/25 bg-primary hover:bg-primary/90">
                   Get Started Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/login">
-                <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-2">
+                <Button size="xl" variant="outline" className="h-14 px-8 text-lg rounded-full border-2">
                   I'm an Organization
                 </Button>
               </Link>
