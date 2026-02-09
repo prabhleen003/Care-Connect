@@ -13,7 +13,7 @@ import { HeartHandshake, LogOut, LayoutDashboard, Search, ListTodo, UserCircle }
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
-export function Navbar() {
+export function Navbar({ title }: { title?: string }) {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
 
@@ -36,6 +36,16 @@ export function Navbar() {
             Care<span className="text-primary">Connect</span>
           </span>
         </Link>
+
+        {/* Dynamic Page Title in Header */}
+        {(title || (location.startsWith("/dashboard") && user)) && (
+          <>
+            <div className="h-6 w-px bg-border mx-2" />
+            <h1 className="text-lg font-bold text-foreground truncate">
+              {title || (user?.role === "ngo" ? "NGO Dashboard" : "Volunteer Dashboard")}
+            </h1>
+          </>
+        )}
 
         <div className="flex-1 flex items-center justify-end gap-4">
           {user ? (

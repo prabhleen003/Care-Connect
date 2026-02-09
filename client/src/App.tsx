@@ -64,7 +64,7 @@ function Router() {
         {user && location !== "/" && <AppSidebar />}
         <main className="flex-1 overflow-auto bg-muted/20 flex flex-col">
           <header className="flex-none">
-            <Navbar />
+            <Navbar title={location === "/dashboard/ngo" ? "NGO Dashboard" : location === "/dashboard/volunteer" ? "Volunteer Dashboard" : undefined} />
           </header>
           <div className="flex-1">
             <Switch>
@@ -177,9 +177,7 @@ function Router() {
 function Layout({ children, title }: { children: React.ReactNode, title: string }) {
   return (
     <div className="flex flex-col h-full">
-      <header className="p-4 border-b bg-background">
-        <h1 className="text-xl font-bold">{title}</h1>
-      </header>
+      {/* Removed the redundant header since it's now in the Navbar */}
       {children}
     </div>
   );
