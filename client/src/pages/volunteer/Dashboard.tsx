@@ -16,8 +16,6 @@ export default function VolunteerDashboard() {
 
   return (
     <div className="min-h-screen bg-background pb-12">
-      <Navbar />
-      
       <div className="bg-primary/5 border-b border-primary/10 py-12 mb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-display font-bold text-secondary mb-2">
