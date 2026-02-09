@@ -1,7 +1,6 @@
 import { useLocation } from "wouter";
 import { useImpactStats } from "@/hooks/use-impact";
 import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { ArrowRight, Users, Heart, Globe, CheckCircle } from "lucide-react";
 
@@ -11,8 +10,6 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 overflow-hidden">
         {/* Abstract background blobs */}
