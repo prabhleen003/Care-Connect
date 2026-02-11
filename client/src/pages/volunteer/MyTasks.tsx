@@ -1,6 +1,5 @@
 import { useVolunteerTasks, useUploadProof, useUpdateTaskStatus, useOptOutTask } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
-import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -14,9 +13,7 @@ export default function MyTasks() {
 
   return (
     <div className="min-h-screen bg-background pb-12">
-      <Navbar />
-      
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <h1 className="text-3xl font-display font-bold text-secondary mb-2">My Applications</h1>
         <p className="text-muted-foreground mb-8">Track your impact and task progress.</p>
 

@@ -42,7 +42,7 @@ export function Navbar({ title }: { title?: string }) {
           <>
             <div className="h-6 w-px bg-border mx-2" />
             <h1 className="text-lg font-bold text-foreground truncate">
-              {title || (user?.role === "ngo" ? "NGO Dashboard" : "Volunteer Dashboard")}
+              {title || (user?.role === "volunteer" ? "Volunteer Dashboard" : "")}
             </h1>
           </>
         )}
