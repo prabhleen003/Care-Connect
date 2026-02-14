@@ -64,7 +64,7 @@ function Router() {
         {user && location !== "/" && <AppSidebar />}
         <main className="flex-1 overflow-auto bg-muted/20 flex flex-col">
           <header className="flex-none">
-            <Navbar />
+            <Navbar title={location === "/dashboard/volunteer" ? "Volunteer Dashboard" : undefined} />
           </header>
           <div className="flex-1">
             <Switch>

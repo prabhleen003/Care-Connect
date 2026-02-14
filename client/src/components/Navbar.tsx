@@ -38,11 +38,11 @@ export function Navbar({ title }: { title?: string }) {
         </Link>
 
         {/* Dynamic Page Title in Header */}
-        {(title || (location.startsWith("/dashboard") && user)) && title && (
+        {(title || (location.startsWith("/dashboard") && user)) && (
           <>
             <div className="h-6 w-px bg-border mx-2" />
             <h1 className="text-lg font-bold text-foreground truncate">
-              {title}
+              {title || (user?.role === "volunteer" ? "Volunteer Dashboard" : "")}
             </h1>
           </>
         )}

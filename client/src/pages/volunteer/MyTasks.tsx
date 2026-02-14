@@ -67,14 +67,6 @@ function TaskItem({ task }: { task: any }) {
     }
   };
 
-  if (!task.cause) {
-    return (
-      <Card className="p-6">
-        <p className="text-muted-foreground italic">Cause information is unavailable for this application.</p>
-      </Card>
-    );
-  }
-
   return (
     <Card className="flex flex-col md:flex-row overflow-hidden border-border/60 shadow-sm hover:shadow-md transition-all">
       <div className="w-full md:w-48 bg-muted/30 flex items-center justify-center p-6 border-b md:border-b-0 md:border-r">
@@ -93,9 +85,9 @@ function TaskItem({ task }: { task: any }) {
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-xl font-bold text-secondary mb-1">{task.cause?.title || "Untitled Cause"}</h3>
-            <p className="text-sm text-muted-foreground">{task.cause?.location || "Remote"} • {task.cause?.category || "General"}</p>
+            <p className="text-sm text-muted-foreground">{task.cause.location} • {task.cause.category}</p>
           </div>
-          <Badge variant="outline">{task.cause?.urgency > 7 ? "High Priority" : "Standard"}</Badge>
+          <Badge variant="outline">{task.cause.urgency > 7 ? "High Priority" : "Standard"}</Badge>
         </div>
 
         <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t">
