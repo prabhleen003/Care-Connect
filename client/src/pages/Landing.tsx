@@ -49,7 +49,7 @@ export default function Landing() {
               <Button 
                 size="xl" 
                 className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/25 bg-primary hover:bg-primary/90"
-                onClick={() => setLocation("/register?role=volunteer")}
+                onClick={() => setLocation("/login")}
               >
                 Get Started Now
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -58,7 +58,7 @@ export default function Landing() {
                 size="xl" 
                 variant="outline" 
                 className="h-14 px-8 text-lg rounded-full border-2"
-                onClick={() => setLocation("/register?role=ngo")}
+                onClick={() => setLocation("/login")}
               >
                 I'm an Organisation
               </Button>

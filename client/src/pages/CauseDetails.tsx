@@ -1,7 +1,6 @@
 import { useCause } from "@/hooks/use-causes";
 import { useApplyForCause, useUploadProof, useUpdateTaskStatus, useVolunteerTasks } from "@/hooks/use-tasks";
 import { useAuth } from "@/hooks/use-auth";
-import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,8 +95,6 @@ export default function CauseDetails() {
 
   return (
     <div className="min-h-screen bg-background pb-12">
-      <Navbar />
-
       <div className="relative h-[300px] md:h-[400px] w-full overflow-hidden">
         <img 
           src={fallbackImage} 

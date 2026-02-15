@@ -45,7 +45,7 @@ export default function DonationInsights() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${analytics?.totalDonations.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+            <p className="text-xs text-muted-foreground">Total received across all causes</p>
           </CardContent>
         </Card>
       </div>

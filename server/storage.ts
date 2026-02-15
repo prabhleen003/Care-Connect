@@ -21,7 +21,7 @@ export interface IStorage {
   
   createTask(task: InsertTask): Promise<Task>;
   getTask(id: number): Promise<Task & { cause: Cause, volunteer: User } | undefined>;
-  getTasksByVolunteer(volunteerId: number): Promise<Task[]>;
+  getTasksByVolunteer(volunteerId: number): Promise<(Task & { cause: Cause })[]>;
   getTasksByNgo(ngoId: number): Promise<(Task & { cause: Cause, volunteer: User })[]>;
   updateTaskStatus(id: number, status: string): Promise<Task>;
   deleteTask(id: number): Promise<void>;
@@ -82,19 +82,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCauses(filters?: { category?: string; location?: string; urgency?: string }): Promise<Cause[]> {
-    let query = db.select().from(causes);
     const conditions = [];
-    
-    if (filters?.category) conditions.push(eq(causes.category, filters.category));
+
+    if (filters?.category && filters.category !== "all") conditions.push(eq(causes.category, filters.category));
     if (filters?.location) conditions.push(eq(causes.location, filters.location));
-    // urgency filtering logic can be added here if exact match, or range
-    
+
     if (conditions.length > 0) {
-      // @ts-ignore
-      query.where(and(...conditions));
+      return await db.select().from(causes).where(and(...conditions)).orderBy(desc(causes.createdAt));
     }
-    
-    return await query.orderBy(desc(causes.createdAt));
+
+    return await db.select().from(causes).orderBy(desc(causes.createdAt));
   }
 
   async getCause(id: number): Promise<Cause | undefined> {
@@ -279,8 +276,17 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getTasksByVolunteer(volunteerId: number): Promise<Task[]> {
-    return await db.select().from(tasks).where(eq(tasks.volunteerId, volunteerId));
+  async getTasksByVolunteer(volunteerId: number): Promise<(Task & { cause: Cause })[]> {
+    const result = await db
+      .select({
+        task: tasks,
+        cause: causes,
+      })
+      .from(tasks)
+      .innerJoin(causes, eq(tasks.causeId, causes.id))
+      .where(eq(tasks.volunteerId, volunteerId));
+
+    return result.map(r => ({ ...r.task, cause: r.cause }));
   }
 
   async getTasksByNgo(ngoId: number): Promise<(Task & { cause: Cause, volunteer: User })[]> {
@@ -297,23 +303,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(causes.ngoId, ngoId));
 
     return result.map(r => ({ ...r.task, cause: r.cause, volunteer: r.volunteer }));
-  }
-
-  async getTask(id: number): Promise<Task & { cause: Cause, volunteer: User } | undefined> {
-    if (isNaN(id)) return undefined;
-    const [result] = await db
-      .select({
-        task: tasks,
-        cause: causes,
-        volunteer: users
-      })
-      .from(tasks)
-      .innerJoin(causes, eq(tasks.causeId, causes.id))
-      .innerJoin(users, eq(tasks.volunteerId, users.id))
-      .where(eq(tasks.id, id));
-    
-    if (!result) return undefined;
-    return { ...result.task, cause: result.cause, volunteer: result.volunteer };
   }
 
   async updateTaskStatus(id: number, status: string): Promise<Task> {

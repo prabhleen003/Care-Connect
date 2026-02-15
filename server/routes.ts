@@ -4,12 +4,53 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Setup multer for file uploads
+const uploadsDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, uniqueSuffix + path.extname(file.originalname));
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = /\.(jpg|jpeg|png|gif|webp|mp4|webm)$/i;
+    if (allowed.test(path.extname(file.originalname))) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image and video files are allowed"));
+    }
+  },
+});
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   setupAuth(app);
+
+  // Serve uploaded files statically
+  app.use("/uploads", (await import("express")).default.static(uploadsDir));
+
+  // File upload endpoint
+  app.post("/api/upload", (req, res, next) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    next();
+  }, upload.single("file"), (req, res) => {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    const url = `/uploads/${req.file.filename}`;
+    res.json({ url });
+  });
 
   // Causes
   app.get(api.causes.list.path, async (req, res) => {
@@ -184,7 +225,9 @@ export async function registerRoutes(
 
   app.patch("/api/user", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const updated = await storage.updateUser(req.user.id, req.body);
+    // Prevent overwriting sensitive fields
+    const { id, password, role, username, ...safeData } = req.body;
+    const updated = await storage.updateUser(req.user.id, safeData);
     res.json(updated);
   });
 

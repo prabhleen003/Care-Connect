@@ -35,6 +35,7 @@ export default function NgoDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
+            <h1 className="text-3xl font-display font-bold text-secondary">Welcome back, {user?.name.split(" ")[0]}!</h1>
             <p className="text-muted-foreground mt-1">Manage your causes and volunteer applications</p>
           </div>
           <CreateCauseDialog />

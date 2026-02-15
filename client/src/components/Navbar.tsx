@@ -9,11 +9,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { HeartHandshake, LogOut, LayoutDashboard, Search, ListTodo, UserCircle } from "lucide-react";
+import { HeartHandshake, LogOut, LayoutDashboard, UserCircle } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
-export function Navbar({ title }: { title?: string }) {
+export function Navbar() {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
 
@@ -37,15 +37,6 @@ export function Navbar({ title }: { title?: string }) {
           </span>
         </Link>
 
-        {/* Dynamic Page Title in Header */}
-        {(title || (location.startsWith("/dashboard") && user)) && (
-          <>
-            <div className="h-6 w-px bg-border mx-2" />
-            <h1 className="text-lg font-bold text-foreground truncate">
-              {title || (user?.role === "ngo" ? "NGO Dashboard" : "Volunteer Dashboard")}
-            </h1>
-          </>
-        )}
 
         <div className="flex-1 flex items-center justify-end gap-4">
           {user ? (
@@ -114,7 +105,7 @@ export function Navbar({ title }: { title?: string }) {
               <Link href="/login">
                 <Button variant="ghost" className="font-medium">Sign In</Button>
               </Link>
-              <Link href="/register">
+              <Link href="/login">
                 <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
                   Get Started
                 </Button>

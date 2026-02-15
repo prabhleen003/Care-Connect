@@ -128,7 +128,7 @@ export const api = {
     updateStatus: {
       method: 'PATCH' as const,
       path: '/api/tasks/:id/status',
-      input: z.object({ status: z.enum(["pending", "in_progress", "completed"]) }),
+      input: z.object({ status: z.enum(["pending", "in_consideration", "approved", "declined", "in_progress", "completed"]) }),
       responses: {
         200: z.custom<typeof tasks.$inferSelect>(),
         404: errorSchemas.notFound,

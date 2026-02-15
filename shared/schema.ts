@@ -165,6 +165,7 @@ export const insertPostCommentSchema = createInsertSchema(postComments).omit({ i
 
 export type PostLike = typeof postLikes.$inferSelect;
 export type PostComment = typeof postComments.$inferSelect;
+export type InsertPostComment = z.infer<typeof insertPostCommentSchema>;
 
 export type PostResponse = Post & { 
   author?: { id: number, name: string, role: string },
