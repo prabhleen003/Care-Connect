@@ -28,16 +28,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, CalendarDays } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 const formSchema = insertCauseSchema.omit({ ngoId: true });
 
 export function CreateCauseDialog() {
   const [open, setOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const createCause = useCreateCause();
-  
+
   const form = useForm<Omit<InsertCause, "ngoId">>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -51,12 +57,20 @@ export function CreateCauseDialog() {
   });
 
   const onSubmit = (data: Omit<InsertCause, "ngoId">) => {
-    createCause.mutate(data, {
-      onSuccess: () => {
-        setOpen(false);
-        form.reset();
+    createCause.mutate(
+      {
+        ...data,
+        startDate: dateRange?.from ?? null,
+        endDate: dateRange?.to ?? null,
       },
-    });
+      {
+        onSuccess: () => {
+          setOpen(false);
+          form.reset();
+          setDateRange(undefined);
+        },
+      }
+    );
   };
 
   return (
@@ -132,6 +146,47 @@ export function CreateCauseDialog() {
               />
             </div>
 
+            {/* Date Range Picker */}
+            <div className="space-y-2">
+              <FormLabel>Cause Duration</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dateRange?.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "MMM d, yyyy")} — {format(dateRange.to, "MMM d, yyyy")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "MMM d, yyyy")
+                      )
+                    ) : (
+                      "Select start and end dates"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                    disabled={{ before: new Date() }}
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Pick the start and end dates for this cause.
+              </p>
+            </div>
+
             <FormField
               control={form.control}
               name="urgency"
@@ -160,10 +215,10 @@ export function CreateCauseDialog() {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Describe the cause, what volunteers will do, and the impact..." 
+                    <Textarea
+                      placeholder="Describe the cause, what volunteers will do, and the impact..."
                       className="min-h-[120px]"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

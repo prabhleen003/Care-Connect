@@ -71,6 +71,7 @@ export function useUploadProof() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.tasks.listByVolunteer.path] });
+      queryClient.invalidateQueries({ queryKey: [api.tasks.listByNgo.path] });
       toast({ title: "Proof Submitted", description: "The NGO will review your contribution." });
     },
     onError: (error: Error) => {
@@ -109,7 +110,7 @@ export function useUpdateTaskStatus() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ taskId, status }: { taskId: number; status: "pending" | "in_consideration" | "approved" | "declined" | "in_progress" | "completed" }) => {
+    mutationFn: async ({ taskId, status }: { taskId: number; status: "pending" | "in_consideration" | "approved" | "declined" | "in_progress" | "completed" | "no_show" }) => {
       const url = buildUrl(api.tasks.updateStatus.path, { id: taskId });
       const res = await fetch(url, {
         method: api.tasks.updateStatus.method,
@@ -141,6 +142,7 @@ export function useApproveTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.tasks.listByNgo.path] });
+      queryClient.invalidateQueries({ queryKey: [api.tasks.listByVolunteer.path] });
       toast({ title: "Task Approved", description: "Volunteer hours have been recorded." });
     },
   });

@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MapPin, Phone, Mail, Edit3, Camera, Globe, Upload, User as UserIcon, FileText, Briefcase } from "lucide-react";
+import { Loader2, MapPin, Phone, Mail, Edit3, Camera, Globe, Upload, User as UserIcon, FileText, Briefcase, Users } from "lucide-react";
 import { useState, useRef } from "react";
 
 export default function Profile() {
@@ -23,6 +23,16 @@ export default function Profile() {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: followerData } = useQuery<{ count: number }>({
+    queryKey: [`/api/users/${user?.id}/followers/count`],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${user!.id}/followers/count`);
+      if (!res.ok) return { count: 0 };
+      return res.json();
+    },
+    enabled: !!user && user.role === "ngo",
+  });
 
   const form = useForm({
     defaultValues: {
@@ -175,6 +185,12 @@ export default function Profile() {
                   <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline font-medium">
                     <Globe className="h-4 w-4" /> Website
                   </a>
+                )}
+                {user.role === "ngo" && (
+                  <span className="flex items-center gap-1.5 font-medium text-secondary">
+                    <Users className="h-4 w-4 text-primary" />
+                    {followerData?.count ?? 0} follower{(followerData?.count ?? 0) !== 1 ? "s" : ""}
+                  </span>
                 )}
               </div>
             </div>

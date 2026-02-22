@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { insertUserSchema, insertCauseSchema, insertTaskSchema, insertDonationSchema, insertPostSchema, users, causes, tasks, donations, posts } from './schema';
 
+// Joined response types matching what the server actually returns
+type TaskWithCauseAndNgo = typeof tasks.$inferSelect & { cause: typeof causes.$inferSelect; ngoName: string };
+type TaskWithCauseAndVolunteer = typeof tasks.$inferSelect & { cause: typeof causes.$inferSelect; volunteer: typeof users.$inferSelect };
+type TaskWithCauseAndVolunteerDetail = typeof tasks.$inferSelect & { cause: typeof causes.$inferSelect; volunteer: typeof users.$inferSelect };
+
 export const errorSchemas = {
   validation: z.object({
     message: z.string(),
@@ -90,7 +95,28 @@ export const api = {
         200: z.array(z.custom<typeof causes.$inferSelect>()),
         401: errorSchemas.unauthorized,
       },
-    }
+    },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/causes/:id',
+      input: insertCauseSchema.omit({ ngoId: true }).partial(),
+      responses: {
+        200: z.custom<typeof causes.$inferSelect>(),
+        401: errorSchemas.unauthorized,
+        403: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/causes/:id',
+      responses: {
+        204: z.void(),
+        401: errorSchemas.unauthorized,
+        403: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+      },
+    },
   },
   tasks: {
     apply: {
@@ -105,7 +131,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/volunteer/tasks',
       responses: {
-        200: z.array(z.custom<typeof tasks.$inferSelect>()),
+        200: z.array(z.custom<TaskWithCauseAndNgo>()),
         401: errorSchemas.unauthorized,
       },
     },
@@ -113,7 +139,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/ngo/tasks', // Tasks/Applications for my causes
       responses: {
-        200: z.array(z.custom<typeof tasks.$inferSelect>()),
+        200: z.array(z.custom<TaskWithCauseAndVolunteer>()),
         401: errorSchemas.unauthorized,
       },
     },
@@ -121,14 +147,14 @@ export const api = {
       method: 'GET' as const,
       path: '/api/tasks/:id',
       responses: {
-        200: z.custom<typeof tasks.$inferSelect>(),
+        200: z.custom<TaskWithCauseAndVolunteerDetail>(),
         404: errorSchemas.notFound,
       },
     },
     updateStatus: {
       method: 'PATCH' as const,
       path: '/api/tasks/:id/status',
-      input: z.object({ status: z.enum(["pending", "in_consideration", "approved", "declined", "in_progress", "completed"]) }),
+      input: z.object({ status: z.enum(["pending", "in_consideration", "approved", "declined", "in_progress", "completed", "no_show"]) }),
       responses: {
         200: z.custom<typeof tasks.$inferSelect>(),
         404: errorSchemas.notFound,

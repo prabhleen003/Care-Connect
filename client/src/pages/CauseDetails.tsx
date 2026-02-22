@@ -132,7 +132,7 @@ export default function CauseDetails() {
             </h3>
             <p className="text-muted-foreground">
               By volunteering for this task, you are directly contributing to the {cause.category.toLowerCase()} development in {cause.location}. 
-              This is rated as {cause.urgency}/10 urgency, meaning your immediate help is highly valued.
+              This is rated as {cause.urgency ?? 0}/10 urgency, meaning your immediate help is highly valued.
             </p>
           </section>
         </div>
@@ -152,11 +152,11 @@ export default function CauseDetails() {
                 <div className="text-sm text-muted-foreground uppercase tracking-wider font-bold mb-1">Urgency</div>
                 <div className="w-full bg-secondary/10 rounded-full h-2.5">
                   <div 
-                    className={`h-2.5 rounded-full ${cause.urgency > 7 ? 'bg-red-500' : 'bg-primary'}`} 
-                    style={{ width: `${cause.urgency * 10}%` }} 
+                    className={`h-2.5 rounded-full ${(cause.urgency ?? 0) > 7 ? 'bg-red-500' : 'bg-primary'}`}
+                    style={{ width: `${(cause.urgency ?? 0) * 10}%` }}
                   />
                 </div>
-                <div className="text-right text-xs mt-1 font-medium">{cause.urgency}/10</div>
+                <div className="text-right text-xs mt-1 font-medium">{cause.urgency ?? 0}/10</div>
               </div>
 
               <div className="pt-4 border-t">

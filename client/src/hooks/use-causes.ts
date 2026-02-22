@@ -77,3 +77,53 @@ export function useCreateCause() {
     },
   });
 }
+
+// Update an existing cause (NGO only)
+export function useUpdateCause() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ causeId, data }: { causeId: number; data: Partial<Omit<InsertCause, "ngoId">> }) => {
+      const url = buildUrl(api.causes.update.path, { id: causeId });
+      const res = await fetch(url, {
+        method: api.causes.update.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update cause");
+      return api.causes.update.responses[200].parse(await res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.causes.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.causes.getByNgo.path] });
+      queryClient.invalidateQueries({ queryKey: [api.causes.get.path] });
+      toast({ title: "Cause Updated", description: "Your changes have been saved." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+// Delete a cause (NGO only)
+export function useDeleteCause() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (causeId: number) => {
+      const url = buildUrl(api.causes.delete.path, { id: causeId });
+      const res = await fetch(url, { method: api.causes.delete.method });
+      if (!res.ok) throw new Error("Failed to delete cause");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.causes.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.causes.getByNgo.path] });
+      toast({ title: "Cause Deleted", description: "The cause has been removed." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}

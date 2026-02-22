@@ -5,19 +5,29 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User } from "@shared/schema";
+import { User as SchemaUser } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
+export function sanitizeUser(user: SchemaUser): Omit<SchemaUser, "password"> {
+  const { password, ...safeUser } = user;
+  return safeUser;
+}
+
 declare global {
   namespace Express {
-    interface User extends User {}
+    interface User extends SchemaUser {}
   }
 }
 
 export function setupAuth(app: Express) {
+  if (!process.env.SESSION_SECRET) {
+    console.warn("WARNING: SESSION_SECRET is not set. Using a random secret — sessions will not persist across restarts.");
+  }
+  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString("hex");
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "r3pl1t_s3ss10n_s3cr3t",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -87,7 +97,7 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json(user);
+        res.status(201).json(sanitizeUser(user));
       });
     } catch (err) {
       next(err);
@@ -95,7 +105,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/auth/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+    res.status(200).json(sanitizeUser(req.user as SchemaUser));
   });
 
   app.post("/api/auth/logout", (req, res, next) => {
@@ -107,6 +117,6 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    res.json(sanitizeUser(req.user as SchemaUser));
   });
 }

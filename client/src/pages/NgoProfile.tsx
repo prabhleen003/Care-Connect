@@ -1,18 +1,23 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { User, Cause, PostResponse } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Building2, MapPin, Mail, Heart, MessageSquare, Globe, CheckCircle2 } from "lucide-react";
+import { Loader2, Building2, MapPin, Mail, Heart, MessageSquare, Globe, CheckCircle2, UserPlus, UserMinus, Users } from "lucide-react";
 import { CauseCard } from "@/components/CauseCard";
 import { PostCard } from "../components/PostCard";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function NgoProfile() {
   const { id } = useParams();
   const ngoId = Number(id);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: ngos, isLoading: isLoadingNgo } = useQuery<User[]>({
     queryKey: ["/api/ngos"],
@@ -26,6 +31,42 @@ export default function NgoProfile() {
 
   const { data: posts, isLoading: isLoadingPosts } = useQuery<PostResponse[]>({
     queryKey: [`/api/posts/author/${ngoId}`],
+  });
+
+  const { data: followStatus } = useQuery<{ following: boolean }>({
+    queryKey: [`/api/users/${ngoId}/follow-status`],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${ngoId}/follow-status`);
+      if (!res.ok) return { following: false };
+      return res.json();
+    },
+    enabled: !!user && user.id !== ngoId,
+  });
+
+  const { data: followerData } = useQuery<{ count: number }>({
+    queryKey: [`/api/users/${ngoId}/followers/count`],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${ngoId}/followers/count`);
+      if (!res.ok) return { count: 0 };
+      return res.json();
+    },
+  });
+
+  const followPending = useRef(false);
+
+  const toggleFollow = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/users/${ngoId}/follow`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json() as Promise<{ following: boolean }>;
+    },
+    onSuccess: (data) => {
+      followPending.current = false;
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${ngoId}/follow-status`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${ngoId}/followers/count`] });
+      toast({ title: data.following ? `Following ${ngo?.name}` : `Unfollowed ${ngo?.name}` });
+    },
+    onError: () => { followPending.current = false; },
   });
 
   if (isLoadingNgo || isLoadingCauses || isLoadingPosts) {
@@ -93,8 +134,32 @@ export default function NgoProfile() {
                   <Mail className="h-4 w-4" />
                   <span>{ngo.email}</span>
                 </div>
+                <div className="flex items-center gap-1 font-medium text-secondary">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span>{followerData?.count ?? 0} follower{(followerData?.count ?? 0) !== 1 ? 's' : ''}</span>
+                </div>
               </div>
             </div>
+            {user && user.id !== ngoId && (
+              <Button
+                onClick={() => {
+                  if (followPending.current) return;
+                  followPending.current = true;
+                  toggleFollow.mutate();
+                }}
+                disabled={toggleFollow.isPending}
+                variant={followStatus?.following ? "outline" : "default"}
+                className="rounded-full gap-2 px-5 shrink-0"
+              >
+                {toggleFollow.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : followStatus?.following ? (
+                  <><UserMinus className="h-4 w-4" /> Unfollow</>
+                ) : (
+                  <><UserPlus className="h-4 w-4" /> Follow</>
+                )}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

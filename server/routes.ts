@@ -1,12 +1,29 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, sanitizeUser } from "./auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+
+// Geocode a location string to coordinates using free Nominatim API
+async function geocodeLocation(locationText: string): Promise<{ lat: number; lon: number } | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?` +
+      new URLSearchParams({ q: locationText, format: "json", limit: "1" });
+    const response = await fetch(url, {
+      headers: { "User-Agent": "CareConnect/1.0 (volunteer-platform)" },
+    });
+    if (!response.ok) return null;
+    const results = await response.json();
+    if (results.length === 0) return null;
+    return { lat: parseFloat(results[0].lat), lon: parseFloat(results[0].lon) };
+  } catch {
+    return null;
+  }
+}
 
 // Setup multer for file uploads
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -24,8 +41,9 @@ const upload = multer({
   }),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (_req, file, cb) => {
-    const allowed = /\.(jpg|jpeg|png|gif|webp|mp4|webm)$/i;
-    if (allowed.test(path.extname(file.originalname))) {
+    const allowedExtensions = /\.(jpg|jpeg|png|gif|webp|mp4|webm)$/i;
+    const allowedMimeTypes = /^(image\/(jpeg|png|gif|webp)|video\/(mp4|webm))$/;
+    if (allowedExtensions.test(path.extname(file.originalname)) && allowedMimeTypes.test(file.mimetype)) {
       cb(null, true);
     } else {
       cb(new Error("Only image and video files are allowed"));
@@ -39,8 +57,31 @@ export async function registerRoutes(
 ): Promise<Server> {
   setupAuth(app);
 
-  // Serve uploaded files statically
-  app.use("/uploads", (await import("express")).default.static(uploadsDir));
+  // Serve uploaded files statically (authenticated only, no directory listing)
+  app.use("/uploads", (req, _res, next) => {
+    if (!(req as any).isAuthenticated()) return _res.sendStatus(401);
+    next();
+  }, (await import("express")).default.static(uploadsDir, { dotfiles: "deny", index: false }));
+
+  // Magic bytes for allowed file types
+  const MAGIC_BYTES: [Buffer, string][] = [
+    [Buffer.from([0xFF, 0xD8, 0xFF]), "image/jpeg"],
+    [Buffer.from([0x89, 0x50, 0x4E, 0x47]), "image/png"],
+    [Buffer.from("GIF87a"), "image/gif"],
+    [Buffer.from("GIF89a"), "image/gif"],
+    [Buffer.from("RIFF"), "image/webp"], // WebP starts with RIFF....WEBP
+    [Buffer.from([0x00, 0x00, 0x00]), "video/mp4"], // ftyp box (byte 4+)
+    [Buffer.from([0x1A, 0x45, 0xDF, 0xA3]), "video/webm"],
+  ];
+
+  function validateMagicBytes(filePath: string): boolean {
+    const fd = fs.openSync(filePath, "r");
+    const buf = Buffer.alloc(12);
+    fs.readSync(fd, buf, 0, 12, 0);
+    fs.closeSync(fd);
+
+    return MAGIC_BYTES.some(([magic]) => buf.subarray(0, magic.length).equals(magic));
+  }
 
   // File upload endpoint
   app.post("/api/upload", (req, res, next) => {
@@ -48,6 +89,13 @@ export async function registerRoutes(
     next();
   }, upload.single("file"), (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    // Validate actual file content against magic bytes
+    if (!validateMagicBytes(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: "File content does not match an allowed type" });
+    }
+
     const url = `/uploads/${req.file.filename}`;
     res.json({ url });
   });
@@ -60,8 +108,22 @@ export async function registerRoutes(
 
   app.post(api.causes.create.path, async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== 'ngo') return res.sendStatus(401);
-    const input = api.causes.create.input.parse(req.body);
-    const cause = await storage.createCause({ ...input, ngoId: req.user.id });
+    const body = { ...req.body };
+    if (body.startDate) body.startDate = new Date(body.startDate);
+    if (body.endDate) body.endDate = new Date(body.endDate);
+    const input = api.causes.create.input.parse(body);
+
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+    if (input.location) {
+      const coords = await geocodeLocation(input.location);
+      if (coords) {
+        latitude = coords.lat;
+        longitude = coords.lon;
+      }
+    }
+
+    const cause = await storage.createCause({ ...input, ngoId: req.user.id, latitude, longitude });
     res.status(201).json(cause);
   });
 
@@ -81,6 +143,44 @@ export async function registerRoutes(
     if (!req.isAuthenticated() || req.user.role !== 'ngo') return res.sendStatus(401);
     const causes = await storage.getCausesByNgo(req.user.id);
     res.json(causes);
+  });
+
+  app.patch(api.causes.update.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'ngo') return res.sendStatus(401);
+    const causeId = Number(req.params.id);
+    const cause = await storage.getCause(causeId);
+    if (!cause) return res.sendStatus(404);
+    if (cause.ngoId !== req.user.id) return res.sendStatus(403);
+
+    const { id, ngoId, createdAt, ...body } = req.body;
+    if (body.startDate) body.startDate = new Date(body.startDate);
+    if (body.endDate) body.endDate = new Date(body.endDate);
+
+    // Re-geocode if location changed
+    if (body.location && body.location !== cause.location) {
+      const coords = await geocodeLocation(body.location);
+      if (coords) {
+        body.latitude = coords.lat;
+        body.longitude = coords.lon;
+      } else {
+        body.latitude = null;
+        body.longitude = null;
+      }
+    }
+
+    const updated = await storage.updateCause(causeId, body);
+    res.json(updated);
+  });
+
+  app.delete(api.causes.delete.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'ngo') return res.sendStatus(401);
+    const causeId = Number(req.params.id);
+    const cause = await storage.getCause(causeId);
+    if (!cause) return res.sendStatus(404);
+    if (cause.ngoId !== req.user.id) return res.sendStatus(403);
+
+    await storage.deleteCause(causeId);
+    res.sendStatus(204);
   });
 
   // Tasks
@@ -117,10 +217,17 @@ export async function registerRoutes(
     const task = await storage.getTask(taskId);
     if (!task) return res.sendStatus(404);
 
-    // Only NGO can approve/decline or move to in_consideration
-    // Volunteer can only update to in_progress or completed
-    if (req.user.role === 'volunteer' && !['in_progress', 'completed'].includes(status)) {
-      return res.status(403).json({ message: "Volunteers can only update to in_progress or completed" });
+    // Volunteers can only update their own tasks, and only to in_progress or completed
+    if (req.user.role === 'volunteer') {
+      if (task.volunteerId !== req.user.id) return res.sendStatus(403);
+      if (!['in_progress', 'completed'].includes(status)) {
+        return res.status(403).json({ message: "Volunteers can only update to in_progress or completed" });
+      }
+    }
+
+    // NGOs can only update tasks belonging to their own causes
+    if (req.user.role === 'ngo') {
+      if (task.cause.ngoId !== req.user.id) return res.sendStatus(403);
     }
 
     const updatedTask = await storage.updateTaskStatus(taskId, status);
@@ -137,23 +244,41 @@ export async function registerRoutes(
     if (req.user.role === 'volunteer' && task.volunteerId !== req.user.id) {
       return res.sendStatus(403);
     }
-    
-    // NGOs can also remove tasks? Let's assume only volunteer for opt-out as per request
+
+    // NGOs can only delete tasks belonging to their own causes
+    if (req.user.role === 'ngo' && task.cause.ngoId !== req.user.id) {
+      return res.sendStatus(403);
+    }
+
     await storage.deleteTask(taskId);
     res.sendStatus(204);
   });
 
   app.post(api.tasks.uploadProof.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+    const taskId = Number(req.params.id);
+    const task = await storage.getTask(taskId);
+    if (!task) return res.sendStatus(404);
+
+    // Only the assigned volunteer can upload proof
+    if (task.volunteerId !== req.user.id) return res.sendStatus(403);
+
     const { proofUrl } = req.body;
-    const task = await storage.updateTaskProof(Number(req.params.id), proofUrl);
-    res.json(task);
+    const updated = await storage.updateTaskProof(taskId, proofUrl);
+    res.json(updated);
   });
 
   app.post(api.tasks.approve.path, async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== 'ngo') return res.sendStatus(401);
-    const task = await storage.approveTask(Number(req.params.id));
-    res.json(task);
+    const taskId = Number(req.params.id);
+    const task = await storage.getTask(taskId);
+    if (!task) return res.sendStatus(404);
+
+    // Only the NGO that owns the cause can approve the task
+    if (task.cause.ngoId !== req.user.id) return res.sendStatus(403);
+
+    const approved = await storage.approveTask(taskId);
+    res.json(approved);
   });
 
   // Donations
@@ -223,18 +348,45 @@ export async function registerRoutes(
     res.json(stats);
   });
 
+  app.get("/api/volunteer/impact", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'volunteer') return res.sendStatus(401);
+    const impact = await storage.getVolunteerImpact(req.user.id);
+    res.json(impact);
+  });
+
   app.patch("/api/user", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     // Prevent overwriting sensitive fields
     const { id, password, role, username, ...safeData } = req.body;
     const updated = await storage.updateUser(req.user.id, safeData);
-    res.json(updated);
+    res.json(sanitizeUser(updated));
   });
 
   app.get("/api/ngos", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const ngos = await storage.getNgos();
-    res.json(ngos);
+    res.json(ngos.map(sanitizeUser));
+  });
+
+  // Follow / Unfollow
+  app.post("/api/users/:id/follow", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const followingId = Number(req.params.id);
+    if (followingId === req.user.id) return res.status(400).json({ message: "Cannot follow yourself" });
+    const result = await storage.toggleFollow(req.user.id, followingId);
+    res.json(result);
+  });
+
+  app.get("/api/users/:id/follow-status", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const followingId = Number(req.params.id);
+    const following = await storage.isFollowing(req.user.id, followingId);
+    res.json({ following });
+  });
+
+  app.get("/api/users/:id/followers/count", async (req, res) => {
+    const count = await storage.getFollowerCount(Number(req.params.id));
+    res.json({ count });
   });
 
   // Seed Data (Auto-run if empty)
