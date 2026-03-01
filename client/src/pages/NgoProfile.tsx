@@ -19,11 +19,15 @@ export default function NgoProfile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: ngos, isLoading: isLoadingNgo } = useQuery<User[]>({
-    queryKey: ["/api/ngos"],
+  const { data: ngo, isLoading: isLoadingNgo } = useQuery<Omit<User, "password">>({
+    queryKey: [`/api/users/${ngoId}`],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${ngoId}`);
+      if (!res.ok) throw new Error("NGO not found");
+      return res.json();
+    },
+    enabled: !!ngoId,
   });
-
-  const ngo = ngos?.find((n) => n.id === ngoId);
 
   const { data: causes, isLoading: isLoadingCauses } = useQuery<Cause[]>({
     queryKey: [`/api/causes/ngo/${ngoId}`],

@@ -35,7 +35,7 @@ export default function Community() {
     defaultValues: {
       content: "",
       mediaUrl: "",
-      mediaType: "image" as const,
+      mediaType: "image" as "image" | "video",
     },
   });
 

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, doublePrecision, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -45,15 +45,9 @@ export const tasks = pgTable("tasks", {
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const donations = pgTable("donations", {
-  id: serial("id").primaryKey(),
-  causeId: integer("cause_id").notNull().references(() => causes.id, { onDelete: "cascade" }),
-  volunteerId: integer("volunteer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  amount: doublePrecision("amount").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  uniqueApplication: uniqueIndex("tasks_cause_volunteer_unique").on(table.causeId, table.volunteerId),
+}));
 
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
@@ -100,26 +94,25 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCauseSchema = createInsertSchema(causes).omit({ id: true, createdAt: true });
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, updatedAt: true, approved: true });
 export const insertPostSchema = createInsertSchema(posts).omit({ id: true, createdAt: true });
-export const insertDonationSchema = createInsertSchema(donations).omit({ id: true, createdAt: true });
 
 export type User = typeof users.$inferSelect;
 export type Cause = typeof causes.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type Post = typeof posts.$inferSelect;
-export type Donation = typeof donations.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertCause = z.infer<typeof insertCauseSchema>;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
-export type InsertDonation = z.infer<typeof insertDonationSchema>;
 
 export const follows = pgTable("follows", {
   id: serial("id").primaryKey(),
   followerId: integer("follower_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   followingId: integer("following_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  uniqueFollow: uniqueIndex("follows_follower_following_unique").on(table.followerId, table.followingId),
+}));
 
 export const followsRelations = relations(follows, ({ one }) => ({
   follower: one(users, { fields: [follows.followerId], references: [users.id] }),
@@ -133,7 +126,9 @@ export const postLikes = pgTable("post_likes", {
   postId: integer("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  uniqueLike: uniqueIndex("post_likes_post_user_unique").on(table.postId, table.userId),
+}));
 
 export const postComments = pgTable("post_comments", {
   id: serial("id").primaryKey(),

@@ -12,7 +12,6 @@ import VolunteerDashboard from "@/pages/volunteer/Dashboard";
 import MyTasks from "@/pages/volunteer/MyTasks";
 import CauseDetails from "@/pages/CauseDetails";
 import Community from "@/pages/Community";
-import DonationInsights from "@/pages/ngo/DonationInsights";
 import NgoList from "@/pages/NgoList";
 import NgoProfile from "@/pages/NgoProfile";
 import Profile from "@/pages/Profile";
@@ -153,14 +152,6 @@ function Router() {
                 {() => (
                   <Layout title="My Tasks">
                     <ProtectedRoute component={MyTasks} allowedRole="volunteer" />
-                  </Layout>
-                )}
-              </Route>
-
-              <Route path="/dashboard/ngo/donations">
-                {() => (
-                  <Layout title="Donation Insights">
-                    <ProtectedRoute component={DonationInsights} allowedRole="ngo" />
                   </Layout>
                 )}
               </Route>

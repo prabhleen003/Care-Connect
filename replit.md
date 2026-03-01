@@ -2,7 +2,7 @@
 
 ## Overview
 
-CareConnect is a social impact platform that connects NGOs with volunteers for community collaboration. NGOs post community causes (food drives, education support, animal care, etc.), and volunteers browse, apply, complete tasks, and upload proof of work. The platform tracks impact metrics and includes a donation system and community blog features.
+CareConnect is a social impact platform that connects NGOs with volunteers for community collaboration. NGOs post community causes (food drives, education support, animal care, etc.), and volunteers browse, apply, complete tasks, and upload proof of work. The platform tracks impact metrics and includes a community blog feed.
 
 ## User Preferences
 
@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 - **ORM**: Drizzle ORM with PostgreSQL dialect
 - **Schema Location**: `shared/schema.ts` contains all table definitions
 - **Migrations**: Drizzle Kit for schema migrations (`drizzle-kit push`)
-- **Tables**: users, causes, tasks, donations, posts with defined relationships
+- **Tables**: users, causes, tasks, posts, follows, post_likes, post_comments with defined relationships
 
 ### Shared Code Structure
 - **Path**: `shared/` directory contains code shared between client and server
@@ -44,8 +44,8 @@ Preferred communication style: Simple, everyday language.
 
 ### Role-Based Access
 - Two user roles: `ngo` and `volunteer`
-- NGOs can create causes, view donation analytics, and approve volunteer work
-- Volunteers can browse causes, apply for tasks, submit proof, and make donations
+- NGOs can create causes, manage volunteer applications, and approve volunteer work
+- Volunteers can browse causes, apply for tasks, and submit proof of work
 
 ## External Dependencies
 
@@ -56,7 +56,7 @@ Preferred communication style: Simple, everyday language.
 ### UI/Component Libraries
 - **Radix UI**: Headless UI primitives (dialogs, dropdowns, forms, etc.)
 - **shadcn/ui**: Pre-styled components built on Radix
-- **Recharts**: Data visualization for donation analytics and impact stats
+- **Recharts**: Data visualization for volunteer impact stats
 
 ### Authentication & Security
 - **Passport.js**: Authentication middleware with local strategy

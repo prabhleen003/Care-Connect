@@ -30,7 +30,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const { loginMutation, registerMutation, user } = useAuth();
   const [, setLocation] = useLocation();
-  const [search] = useSearch();
+  const search = useSearch();
   const searchParams = new URLSearchParams(search);
   const initialRole = searchParams.get("role") as "ngo" | "volunteer" | null;
 

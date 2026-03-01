@@ -5,14 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams, Link } from "wouter";
-import { Loader2, MapPin, Tag, AlertCircle, CheckCircle, Heart, Calendar as CalendarIcon } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { insertDonationSchema } from "@shared/schema";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { Loader2, MapPin, AlertCircle, CheckCircle, Calendar as CalendarIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
@@ -32,26 +26,6 @@ export default function CauseDetails() {
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
 
   const hasApplied = tasks?.some(t => t.causeId === Number(id));
-
-  const donationForm = useForm({
-    resolver: zodResolver(insertDonationSchema.omit({ volunteerId: true, causeId: true })),
-    defaultValues: { amount: "10" },
-  });
-
-  const donateMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/donations", { 
-        ...data, 
-        causeId: Number(id),
-        amount: data.amount.toString()
-      });
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Donation successful! Thank you for your support." });
-      donationForm.reset();
-    },
-  });
 
   const handleApply = () => {
     if (!dateRange.from || !dateRange.to) {
@@ -88,9 +62,6 @@ export default function CauseDetails() {
     );
   }
 
-  // Use placehold.co or Unsplash based on category
-  const imageUrl = `https://source.unsplash.com/random/1200x600/?${cause.category},helping`;
-  // Using static fallback if dynamic fails for stability
   const fallbackImage = "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1200&q=80";
 
   return (
@@ -240,43 +211,6 @@ export default function CauseDetails() {
             </CardContent>
           </Card>
 
-          {user?.role === 'volunteer' && (
-            <Card className="shadow-lg border-primary/10 mt-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Heart className="h-5 w-5 text-red-500" />
-                  Make a Donation
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Form {...donationForm}>
-                  <form onSubmit={donationForm.handleSubmit((data) => donateMutation.mutate(data))} className="space-y-4">
-                    <FormField
-                      control={donationForm.control}
-                      name="amount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Amount ($)</FormLabel>
-                          <FormControl>
-                            <Input type="number" min="1" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-red-500 hover:bg-red-600"
-                      disabled={donateMutation.isPending}
-                    >
-                      {donateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                      Donate Now
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>

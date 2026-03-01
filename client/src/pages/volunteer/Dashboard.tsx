@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Search, Filter, LayoutGrid, Map, Clock, Heart, DollarSign, CheckCircle2, Flame, TrendingUp } from "lucide-react";
+import { Loader2, Search, Filter, LayoutGrid, Map, Clock, Heart, CheckCircle2, Flame, TrendingUp } from "lucide-react";
 import { CauseMap } from "@/components/CauseMap";
 import {
   AreaChart,
@@ -35,10 +35,10 @@ export default function VolunteerDashboard() {
   const { user } = useAuth();
   const [filters, setFilters] = useState({ category: "all", location: "" });
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
-  const { data: causes, isLoading } = useCauses(filters);
+  const { data: causes, isLoading, refetch } = useCauses(filters);
   const { data: impact } = useVolunteerImpact();
 
-  const hasImpact = impact && (impact.tasksCompleted > 0 || impact.totalDonated > 0 || impact.activeTasks > 0);
+  const hasImpact = impact && (impact.tasksCompleted > 0 || impact.activeTasks > 0);
 
   return (
     <div className="min-h-screen bg-background pb-12">
@@ -78,7 +78,7 @@ export default function VolunteerDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            <Button className="md:w-auto bg-primary text-white">
+            <Button className="md:w-auto bg-primary text-white" onClick={() => refetch()}>
               Search Causes
             </Button>
           </div>
@@ -122,20 +122,6 @@ export default function VolunteerDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border/50 bg-gradient-to-br from-amber-50 to-white">
-                <CardContent className="pt-5 pb-4 px-5">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-amber-100">
-                      <DollarSign className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-secondary">${impact.totalDonated.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Donated</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               <Card className="border-border/50 bg-gradient-to-br from-purple-50 to-white">
                 <CardContent className="pt-5 pb-4 px-5">
                   <div className="flex items-center gap-3">
@@ -170,10 +156,6 @@ export default function VolunteerDashboard() {
                             <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                             <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                           </linearGradient>
-                          <linearGradient id="donationGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                          </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                         <XAxis
@@ -190,10 +172,7 @@ export default function VolunteerDashboard() {
                             const [y, m] = (v as string).split("-");
                             return new Date(Number(y), Number(m) - 1).toLocaleString("default", { month: "long", year: "numeric" });
                           }}
-                          formatter={(value: number, name: string) => [
-                            name === "tasks" ? `${value} tasks` : `$${value}`,
-                            name === "tasks" ? "Completed" : "Donated",
-                          ]}
+                          formatter={(value: number) => [`${value} tasks`, "Completed"]}
                         />
                         <Area
                           type="monotone"
@@ -201,13 +180,6 @@ export default function VolunteerDashboard() {
                           stroke="#10b981"
                           strokeWidth={2}
                           fill="url(#taskGradient)"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="donated"
-                          stroke="#3b82f6"
-                          strokeWidth={2}
-                          fill="url(#donationGradient)"
                         />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -290,7 +262,7 @@ export default function VolunteerDashboard() {
           <div className="text-center py-20 bg-muted/20 rounded-2xl border border-dashed">
             <h3 className="text-lg font-medium">No causes found matching your filters.</h3>
             <Button
-              variant="link"
+              variant="ghost"
               onClick={() => setFilters({ category: "all", location: "" })}
             >
               Clear filters

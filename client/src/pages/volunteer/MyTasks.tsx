@@ -267,7 +267,7 @@ function TaskSection({ title, icon, tasks, color, emptyText, volunteerName }: {
       </div>
       <div className="grid gap-4">
         {tasks.map((task: any) => (
-          <TaskItem key={task.id || Math.random()} task={task} volunteerName={volunteerName} />
+          <TaskItem key={task.id} task={task} volunteerName={volunteerName} />
         ))}
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
-import { Home, Inbox, LayoutDashboard, Heart, MessageSquare, PlusCircle, BarChart3, Building2, UserCircle, LogOut } from "lucide-react";
+import { Home, Inbox, LayoutDashboard, Heart, MessageSquare, PlusCircle, Building2, UserCircle, LogOut } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,7 +12,6 @@ export function AppSidebar() {
   const ngoItems = [
     { title: "Dashboard", url: "/dashboard/ngo", icon: LayoutDashboard },
     { title: "My Causes", url: "/dashboard/ngo/causes", icon: Heart },
-    { title: "Donations", url: "/dashboard/ngo/donations", icon: BarChart3 },
     { title: "NGOs", url: "/ngos", icon: Building2 },
     { title: "Community", url: "/community", icon: MessageSquare },
     { title: "My Profile", url: "/profile", icon: UserCircle },

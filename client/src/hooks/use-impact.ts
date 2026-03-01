@@ -14,12 +14,11 @@ export function useImpactStats() {
 
 export interface VolunteerImpact {
   totalHours: number;
-  totalDonated: number;
   causesSupported: number;
   tasksCompleted: number;
   activeTasks: number;
   categories: { name: string; count: number }[];
-  timeline: { month: string; tasks: number; donated: number }[];
+  timeline: { month: string; tasks: number }[];
 }
 
 export function useVolunteerImpact() {

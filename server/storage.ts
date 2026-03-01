@@ -1,6 +1,6 @@
-import { users, causes, tasks, donations, posts, postLikes, postComments, follows, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask, type InsertDonation, type InsertPost, type Donation, type Post, type PostLike, type PostComment, type InsertPostComment, type PostResponse } from "@shared/schema";
+import { users, causes, tasks, posts, postLikes, postComments, follows, type InsertUser, type User, type Cause, type Task, type InsertCause, type InsertTask, type InsertPost, type Post, type PostLike, type PostComment, type InsertPostComment, type PostResponse } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, desc, inArray } from "drizzle-orm";
+import { eq, and, sql, desc, inArray, ilike } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -22,17 +22,13 @@ export interface IStorage {
   deleteCause(id: number): Promise<void>;
   
   createTask(task: InsertTask): Promise<Task>;
-  getTask(id: number): Promise<Task & { cause: Cause, volunteer: User } | undefined>;
+  getTask(id: number): Promise<Task & { cause: Cause, volunteer: Omit<User, 'password'> } | undefined>;
   getTasksByVolunteer(volunteerId: number): Promise<(Task & { cause: Cause; ngoName: string })[]>;
-  getTasksByNgo(ngoId: number): Promise<(Task & { cause: Cause, volunteer: User })[]>;
+  getTasksByNgo(ngoId: number): Promise<(Task & { cause: Cause, volunteer: Omit<User, 'password'> })[]>;
   updateTaskStatus(id: number, status: string): Promise<Task>;
   deleteTask(id: number): Promise<void>;
   updateTaskProof(id: number, proofUrl: string): Promise<Task>;
   approveTask(id: number): Promise<Task>;
-  
-  createDonation(donation: InsertDonation): Promise<Donation>;
-  getDonationsByNgo(ngoId: number): Promise<Donation[]>;
-  getDonationAnalytics(ngoId: number): Promise<any>;
   
   createPost(post: InsertPost): Promise<Post>;
   getPosts(userId?: number): Promise<PostResponse[]>;
@@ -90,7 +86,7 @@ export class DatabaseStorage implements IStorage {
     const conditions = [];
 
     if (filters?.category && filters.category !== "all") conditions.push(eq(causes.category, filters.category));
-    if (filters?.location) conditions.push(eq(causes.location, filters.location));
+    if (filters?.location) conditions.push(ilike(causes.location, `%${filters.location}%`));
 
     const baseSelect = db
       .select({ cause: causes, ngoName: users.name })
@@ -128,19 +124,32 @@ export class DatabaseStorage implements IStorage {
     await db.delete(causes).where(eq(causes.id, id));
   }
 
-  async getTask(id: number): Promise<Task & { cause: Cause, volunteer: User } | undefined> {
+  async getTask(id: number): Promise<Task & { cause: Cause, volunteer: Omit<User, 'password'> } | undefined> {
     if (isNaN(id)) return undefined;
     const [result] = await db
       .select({
         task: tasks,
         cause: causes,
-        volunteer: users
+        volunteer: {
+          id: users.id,
+          username: users.username,
+          role: users.role,
+          name: users.name,
+          email: users.email,
+          description: users.description,
+          location: users.location,
+          website: users.website,
+          phoneNumber: users.phoneNumber,
+          avatarUrl: users.avatarUrl,
+          bannerUrl: users.bannerUrl,
+          headline: users.headline,
+        },
       })
       .from(tasks)
       .innerJoin(causes, eq(tasks.causeId, causes.id))
       .innerJoin(users, eq(tasks.volunteerId, users.id))
       .where(eq(tasks.id, id));
-    
+
     if (!result) return undefined;
     return { ...result.task, cause: result.cause, volunteer: result.volunteer };
   }
@@ -152,51 +161,6 @@ export class DatabaseStorage implements IStorage {
       endDate: task.endDate ? new Date(task.endDate) : null,
     }).returning();
     return newTask;
-  }
-
-  async createDonation(donation: InsertDonation): Promise<Donation> {
-    const [newDonation] = await db.insert(donations).values(donation).returning();
-    return newDonation;
-  }
-
-  async getDonationsByNgo(ngoId: number): Promise<Donation[]> {
-    const result = await db
-      .select({ donation: donations })
-      .from(donations)
-      .innerJoin(causes, eq(donations.causeId, causes.id))
-      .where(eq(causes.ngoId, ngoId));
-    return result.map(r => r.donation);
-  }
-
-  async getDonationAnalytics(ngoId: number) {
-    const allDonations = await db
-      .select({ 
-        donation: donations,
-        cause: causes 
-      })
-      .from(donations)
-      .innerJoin(causes, eq(donations.causeId, causes.id))
-      .where(eq(causes.ngoId, ngoId));
-
-    const total = allDonations.reduce((sum, d) => sum + Number(d.donation.amount), 0);
-    
-    const byCauseMap = new Map<number, { title: string, amount: number }>();
-    allDonations.forEach(d => {
-      const current = byCauseMap.get(d.cause.id) || { title: d.cause.title, amount: 0 };
-      byCauseMap.set(d.cause.id, { ...current, amount: current.amount + Number(d.donation.amount) });
-    });
-
-    const trendsMap = new Map<string, number>();
-    allDonations.forEach(d => {
-      const date = d.donation.createdAt?.toISOString().split('T')[0] || 'unknown';
-      trendsMap.set(date, (trendsMap.get(date) || 0) + Number(d.donation.amount));
-    });
-
-    return {
-      totalDonations: total,
-      byCause: Array.from(byCauseMap.entries()).map(([id, data]) => ({ causeId: id, ...data })),
-      trends: Array.from(trendsMap.entries()).map(([date, amount]) => ({ date, amount })).sort((a, b) => a.date.localeCompare(b.date)),
-    };
   }
 
   async createPost(post: InsertPost): Promise<Post> {
@@ -274,7 +238,12 @@ export class DatabaseStorage implements IStorage {
       await db.delete(postLikes).where(eq(postLikes.id, existing.id));
       return { liked: false };
     } else {
-      await db.insert(postLikes).values({ postId, userId });
+      try {
+        await db.insert(postLikes).values({ postId, userId });
+      } catch (e: any) {
+        if (e.code === '23505') return { liked: true }; // concurrent duplicate insert
+        throw e;
+      }
       return { liked: true };
     }
   }
@@ -313,13 +282,25 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => ({ ...r.task, cause: r.cause, ngoName: r.ngoName }));
   }
 
-  async getTasksByNgo(ngoId: number): Promise<(Task & { cause: Cause, volunteer: User })[]> {
-    // Join tasks with causes where cause.ngoId = ngoId
+  async getTasksByNgo(ngoId: number): Promise<(Task & { cause: Cause, volunteer: Omit<User, 'password'> })[]> {
     const result = await db
       .select({
         task: tasks,
         cause: causes,
-        volunteer: users
+        volunteer: {
+          id: users.id,
+          username: users.username,
+          role: users.role,
+          name: users.name,
+          email: users.email,
+          description: users.description,
+          location: users.location,
+          website: users.website,
+          phoneNumber: users.phoneNumber,
+          avatarUrl: users.avatarUrl,
+          bannerUrl: users.bannerUrl,
+          headline: users.headline,
+        },
       })
       .from(tasks)
       .innerJoin(causes, eq(tasks.causeId, causes.id))
@@ -331,7 +312,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateTaskStatus(id: number, status: string): Promise<Task> {
     const [updated] = await db.update(tasks)
-      .set({ status: status as any })
+      .set({ status: status as any, updatedAt: new Date() })
       .where(eq(tasks.id, id))
       .returning();
     return updated;
@@ -343,7 +324,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateTaskProof(id: number, proofUrl: string): Promise<Task> {
     const [updated] = await db.update(tasks)
-      .set({ proofUrl, status: 'completed' })
+      .set({ proofUrl, status: 'completed', updatedAt: new Date() })
       .where(eq(tasks.id, id))
       .returning();
     return updated;
@@ -351,7 +332,7 @@ export class DatabaseStorage implements IStorage {
 
   async approveTask(id: number): Promise<Task> {
     const [updated] = await db.update(tasks)
-      .set({ approved: true, status: 'completed' })
+      .set({ approved: true, status: 'completed', updatedAt: new Date() })
       .where(eq(tasks.id, id))
       .returning();
     return updated;
@@ -371,73 +352,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVolunteerImpact(volunteerId: number) {
-    // Get all tasks for this volunteer
     const volunteerTasks = await db
       .select({ task: tasks, cause: causes })
       .from(tasks)
       .innerJoin(causes, eq(tasks.causeId, causes.id))
       .where(eq(tasks.volunteerId, volunteerId));
 
-    // Get all donations by this volunteer
-    const volunteerDonations = await db
-      .select({ donation: donations, cause: causes })
-      .from(donations)
-      .innerJoin(causes, eq(donations.causeId, causes.id))
-      .where(eq(donations.volunteerId, volunteerId));
-
     const completedTasks = volunteerTasks.filter(t => t.task.approved);
     const activeTasks = volunteerTasks.filter(t =>
       ["approved", "in_progress"].includes(t.task.status ?? "")
     );
 
-    // Calculate hours from task date ranges
     let totalHours = 0;
     for (const t of completedTasks) {
       if (t.task.startDate && t.task.endDate) {
         const days = Math.ceil(
           (new Date(t.task.endDate).getTime() - new Date(t.task.startDate).getTime()) / (1000 * 60 * 60 * 24)
         );
-        totalHours += Math.max(days, 1) * 4; // 4 hours per day
+        totalHours += Math.max(days, 1) * 4;
       } else {
-        totalHours += 4; // default 4 hours if no dates
+        totalHours += 4;
       }
     }
 
-    const totalDonated = volunteerDonations.reduce(
-      (sum, d) => sum + Number(d.donation.amount), 0
-    );
+    const uniqueCauseIds = new Set(volunteerTasks.map(t => t.cause.id));
 
-    // Unique causes supported
-    const uniqueCauseIds = new Set([
-      ...volunteerTasks.map(t => t.cause.id),
-      ...volunteerDonations.map(d => d.cause.id),
-    ]);
-
-    // Category breakdown from completed tasks
     const categoryMap = new Map<string, number>();
     for (const t of completedTasks) {
       categoryMap.set(t.cause.category, (categoryMap.get(t.cause.category) || 0) + 1);
     }
 
-    // Timeline: monthly activity (tasks completed + donations)
-    const timelineMap = new Map<string, { tasks: number; donated: number }>();
+    const timelineMap = new Map<string, { tasks: number }>();
     for (const t of completedTasks) {
       const month = (t.task.updatedAt ?? t.task.endDate ?? new Date())
-        .toISOString().slice(0, 7); // "YYYY-MM"
-      const entry = timelineMap.get(month) || { tasks: 0, donated: 0 };
+        .toISOString().slice(0, 7);
+      const entry = timelineMap.get(month) || { tasks: 0 };
       entry.tasks += 1;
-      timelineMap.set(month, entry);
-    }
-    for (const d of volunteerDonations) {
-      const month = (d.donation.createdAt ?? new Date()).toISOString().slice(0, 7);
-      const entry = timelineMap.get(month) || { tasks: 0, donated: 0 };
-      entry.donated += Number(d.donation.amount);
       timelineMap.set(month, entry);
     }
 
     return {
       totalHours,
-      totalDonated,
       causesSupported: uniqueCauseIds.size,
       tasksCompleted: completedTasks.length,
       activeTasks: activeTasks.length,
@@ -458,7 +413,12 @@ export class DatabaseStorage implements IStorage {
       await db.delete(follows).where(eq(follows.id, existing.id));
       return { following: false };
     } else {
-      await db.insert(follows).values({ followerId, followingId });
+      try {
+        await db.insert(follows).values({ followerId, followingId });
+      } catch (e: any) {
+        if (e.code === '23505') return { following: true }; // concurrent duplicate insert
+        throw e;
+      }
       return { following: true };
     }
   }

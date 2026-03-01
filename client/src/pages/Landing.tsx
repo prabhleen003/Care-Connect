@@ -46,17 +46,15 @@ export default function Landing() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-4 justify-center pt-4"
             >
-              <Button 
-                size="xl" 
+              <Button
                 className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/25 bg-primary hover:bg-primary/90"
                 onClick={() => setLocation("/login")}
               >
                 Get Started Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button 
-                size="xl" 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-14 px-8 text-lg rounded-full border-2"
                 onClick={() => setLocation("/login")}
               >
